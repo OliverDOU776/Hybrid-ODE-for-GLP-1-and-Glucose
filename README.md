@@ -39,7 +39,7 @@ Install the required packages using pip:
 
 ```bash
 pip install numpy scipy matplotlib pandas
-
+```
 ## Usage
 
 1. **Clone the Repository or Download the Files:**
@@ -66,5 +66,5 @@ pip install numpy scipy matplotlib pandas
 
 ## Contact
 
-For questions or suggestions, please contact Zijia Wang at zw4518@ic.ac.uk.
+For questions or suggestions, please contact Zijia Wang at zijia.wang18@imperial.ac.uk.
 
