@@ -1,0 +1,57 @@
+# Configuration for MIMIC clinical data experiments
+
+data:
+  path: "data/mimic_glucose_insulin.parquet"
+  sequence_length: 61  # 5 hours
+  stride: 12  # 1 hour stride for more samples
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 64
+  nn_layers: 4
+  solver: "dopri5"
+  use_variational: true  # Recommended for clinical data
+
+training:
+  epochs: 200
+  batch_size: 16
+  learning_rate: 5.0e-4
+  lambda1: 0.5  # Lower physics weight for noisy clinical data
+  lambda2: 2.0  # Higher Bayesian weight for uncertainty
+  gradient_clip: 5.0
+  early_stopping_patience: 40
+
+# Clinical data specific settings
+clinical:
+  outlier_removal: true
+  outlier_threshold: 5.0  # Standard deviations
+  missing_data_interpolation: "linear"
+  min_sequence_completeness: 0.8  # Require 80% data completeness
+
+# Adjusted priors for clinical population
+ode_param_priors:
+  a_GI: {mean: 0.0104, std: 0.003}  # Higher variance for population
+  k_I: {mean: 0.025, std: 0.008}
+  rho: {mean: 0.003, std: 0.0015}
+  E_max: {mean: 0.1, std: 0.03}
+  V_max: {mean: 9.0, std: 3.0}
+  K_m: {mean: 7.0, std: 2.0}
+  k_L: {mean: 0.02, std: 0.008}
+
+vi_settings:
+  n_samples: 10  # More samples for clinical uncertainty
+  kl_annealing: true
+  annealing_epochs: 50
+
+ablation:
+  no_nn: false
+  no_bayes: false
+  no_physics: false
+
+logging:
+  tensorboard: true
+  log_interval: 50
+  save_interval: 20
+
+seed: 0

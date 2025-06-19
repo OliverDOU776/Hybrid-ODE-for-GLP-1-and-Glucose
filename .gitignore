@@ -1,0 +1,97 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# PyTorch
+*.pth
+*.pt
+checkpoints/*
+!checkpoints/.gitkeep
+runs/*
+!runs/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Data files
+*.parquet
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Results (keep directory structure)
+results/figures/*.png
+results/figures/*.pdf
+results/tables/*.csv
+results/tables/*.tex
+results/experiments/
+!results/figures/.gitkeep
+!results/tables/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Credentials
+.env
+credentials.json
+physionet_credentials.txt
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+VI_STATUS.md
+FIGURES_GUIDE.md
+output_var.log
+
+# Documentation build
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Claude specific
+.claude
+CLAUDE.local.md
+
+USAGE.md
+Paper_context.md
+*.log

@@ -1,0 +1,50 @@
+# Configuration for 4GI variational inference experiments
+
+data:
+  path: "data/4gi_dataset.csv"
+  sequence_length: 61
+  stride: 30
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 64
+  nn_layers: 4
+  solver: "dopri5"
+  use_variational: true
+
+training:
+  epochs: 300
+  batch_size: 16  # Smaller batch for VI
+  learning_rate: 5.0e-4  # Lower learning rate for VI
+  lambda1: 1.0
+  lambda2: 1.0  # Full Bayesian loss weight
+  gradient_clip: 5.0
+  early_stopping_patience: 30
+
+# Priors for ODE parameters (mean ± std)
+ode_param_priors:
+  a_GI: {mean: 0.0104, std: 0.002}
+  k_I: {mean: 0.025, std: 0.005}
+  rho: {mean: 0.003, std: 0.001}
+  E_max: {mean: 0.1, std: 0.02}
+  V_max: {mean: 9.0, std: 2.0}
+  K_m: {mean: 7.0, std: 1.5}
+  k_L: {mean: 0.02, std: 0.005}
+
+# Variational inference settings
+vi_settings:
+  n_samples: 5  # Monte Carlo samples for ELBO
+  kl_annealing: false  # Whether to anneal KL term
+  
+ablation:
+  no_nn: false
+  no_bayes: false
+  no_physics: false
+
+logging:
+  tensorboard: true
+  log_interval: 20
+  save_interval: 20
+
+seed: 0

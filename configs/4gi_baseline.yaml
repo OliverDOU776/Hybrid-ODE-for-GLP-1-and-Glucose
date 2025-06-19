@@ -1,0 +1,37 @@
+# Configuration for 4GI baseline experiments
+
+data:
+  path: "data/4gi_dataset.csv"
+  sequence_length: 61
+  stride: 30
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 64
+  nn_layers: 4
+  solver: "dopri5"
+
+training:
+  epochs: 300
+  batch_size: 32
+  learning_rate: 1.0e-3
+  lambda1: 1.0  # Physics loss weight
+  lambda2: 0.01  # Small L2 regularization only
+  gradient_clip: 5.0
+  early_stopping_patience: 20
+
+# Use default ODE parameters
+ode_params: null
+
+ablation:
+  no_nn: false
+  no_bayes: true  # Point estimation only
+  no_physics: false
+
+logging:
+  tensorboard: true
+  log_interval: 10
+  save_interval: 20
+
+seed: 0

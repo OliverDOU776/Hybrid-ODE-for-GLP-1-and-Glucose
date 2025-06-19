@@ -1,0 +1,34 @@
+# Configuration for ablation study: pure ODE model (no NN)
+
+data:
+  path: "data/4gi_dataset.csv"
+  sequence_length: 61
+  stride: 30
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 64  # Will be ignored
+  nn_layers: 4   # Will be ignored
+  solver: "dopri5"
+
+training:
+  epochs: 200  # Fewer epochs needed without NN
+  batch_size: 64  # Larger batch size for pure ODE
+  learning_rate: 1.0e-3
+  lambda1: 2.0  # Higher physics weight
+  lambda2: 0.01
+  gradient_clip: 5.0
+  early_stopping_patience: 20
+
+ablation:
+  no_nn: true  # Disable neural network
+  no_bayes: true
+  no_physics: false
+
+logging:
+  tensorboard: true
+  log_interval: 10
+  save_interval: 20
+
+seed: 0

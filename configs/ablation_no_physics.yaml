@@ -1,0 +1,34 @@
+# Configuration for ablation study: no physics loss
+
+data:
+  path: "data/4gi_dataset.csv"
+  sequence_length: 61
+  stride: 30
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 128  # Larger network without physics constraints
+  nn_layers: 5
+  solver: "dopri5"
+
+training:
+  epochs: 400  # More epochs needed without physics guidance
+  batch_size: 32
+  learning_rate: 1.0e-3
+  lambda1: 0.0  # No physics loss
+  lambda2: 0.1  # Higher regularization
+  gradient_clip: 5.0
+  early_stopping_patience: 30
+
+ablation:
+  no_nn: false
+  no_bayes: true
+  no_physics: true  # Disable physics loss
+
+logging:
+  tensorboard: true
+  log_interval: 10
+  save_interval: 20
+
+seed: 0

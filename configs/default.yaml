@@ -1,0 +1,59 @@
+# Default configuration for hybrid ODE-NN model
+
+data:
+  path: "data/4gi_dataset.csv"
+  sequence_length: 61  # 5 hours at 5-minute intervals
+  stride: 30  # 2.5 hour stride between sequences
+  normalize: true
+  num_workers: 0
+
+model:
+  nn_hidden: 64
+  nn_layers: 4
+  solver: "dopri5"  # ODE solver: dopri5, rk45, dop853, radau, bdf
+  rtol: 1.0e-6  # Relative tolerance for ODE solver
+  atol: 1.0e-8  # Absolute tolerance for ODE solver
+
+training:
+  epochs: 300
+  batch_size: 32
+  learning_rate: 1.0e-3
+  lambda1: 1.0  # Weight for physics loss
+  lambda2: 1.0  # Weight for Bayesian/regularization loss
+  gradient_clip: 5.0
+  early_stopping_patience: 20
+
+# ODE parameters (from Table I in the paper)
+ode_params:
+  a_GI: 0.0104  # Glucose-insulin sensitivity (1/min)
+  k_I: 0.025    # Insulin clearance rate (1/min)
+  rho: 0.003    # GLP-1 potentiation factor
+  G_b: 5.0      # Basal glucose (mmol/L)
+  I_b: 60.0     # Basal insulin (pmol/L)
+  E_max: 0.1    # Maximum GLP-1 suppression effect
+  EC_50: 50.0   # GLP-1 concentration for half-max effect (pmol/L)
+  Glu_b: 80.0   # Basal glucagon (pmol/L)
+  V_max: 9.0    # Maximum GLP-1 secretion rate (pmol/L/min)
+  K_m: 7.0      # Michaelis constant for glucose (mmol/L)
+  k_L: 0.02     # GLP-1 degradation rate (1/min)
+  k_GE0: 0.01   # Basal gastric emptying rate (1/min)
+  IGD_50: 1000.0  # GD for half-max suppression
+  g: 2.0        # Hill coefficient for GE suppression
+  p_7: 0.05     # FFA clearance rate (1/min)
+  p_8: 0.001    # Insulin suppression factor
+  p_9: 0.01     # Glucose-driven lipolysis factor
+
+# Ablation study flags
+ablation:
+  no_nn: false      # Disable neural network component
+  no_bayes: false   # Disable Bayesian inference
+  no_physics: false # Disable physics loss
+
+# Logging and output
+logging:
+  tensorboard: true
+  log_interval: 10  # Log every N batches
+  save_interval: 10  # Save checkpoint every N epochs
+
+# Random seed for reproducibility
+seed: 0
