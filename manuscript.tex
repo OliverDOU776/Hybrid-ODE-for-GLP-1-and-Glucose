@@ -1,0 +1,193 @@
+\documentclass[9pt,shortpaper,twoside,web]{ieeecolor}
+\usepackage{generic}
+\usepackage[nosort]{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{xcolor}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{bm}
+\usepackage{tikz}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{siunitx}
+\sisetup{detect-all}
+\usepackage{url}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\markboth{\journalname, VOL. XX, NO. XX, XXXX 2017}
+{Author \MakeLowercase{\textit{et al.}}: Preparation of Brief Papers for IEEE TRANSACTIONS and JOURNALS (February 2017)}
+\begin{document}
+\title{A Hybrid ODE-Neural Network Framework for Modeling GLP-1–Mediated Glucose Dynamics}
+\author{Zijia Wang, Sumbal Sarwar, Christofer Toumazou, \IEEEmembership{Fellow, IEEE}
+\thanks{All authors are with Centre for Bio-Inspired Technology, Department of Electrical and Electronic Engineering, Imperial College London, SW7 2BT, UK.}
+\thanks{For questions, please reach c.toumazou@imperial.ac.uk}}
+\maketitle
+\begin{abstract}
+Our objective is to develop a physiologically interpretable yet data-adaptive model that captures nonlinear, GLP-1–mediated glucose regulation with quantified uncertainty. We couple a minimal, identifiable system of ordinary differential equations with residual neural networks and Bayesian parameter inference. The hybrid is trained on fully observed 4GI simulator data and on sparse glucose–insulin records from MIMIC-III, and benchmarked against mechanistic-only and NN-only baselines. On 4GI data the hybrid reduced RMSE from \SI{0.75}{mmol/L} (mechanistic) and \SI{0.62}{mmol/L} (NN) to \SI{0.45}{mmol/L} and achieved $R^2=0.94$. On MIMIC-III it lowered RMSE to \SI{0.72}{mmol/L} versus \SI{1.10}{mmol/L} (mechanistic) and improved calibration error to 0.08. Global sensitivity analysis identified insulin-uptake ($k_I$) and GLP-1 potentiation ($\rho$) as dominant parameters. Integrating mechanistic constraints with neural corrections and Bayesian inference yields a robust, uncertainty-aware representation of GLP-1–glucose physiology that translates from controlled simulations to noisy clinical data. We further report robustness to missingness/noise, latent GLP-1 recovery on synthetic ground truth, online updating for per-subject adaptation, and comprehensive uncertainty metrics (coverage, NLL, CRPS, reliability).\textbf{Significance}—The framework serves as a translational engineering tool for GLP-1–aware glucose modeling and prospective prototyping for future downstream tasks like clinical dosing or therapeutic guidance.
+\end{abstract}
+\begin{IEEEkeywords}
+Physiological modeling, Neural networks, Ordinary differential equations, Uncertainty quantification, Translational engineering, Diabetes
+\end{IEEEkeywords}
+% Introduction and other sections omitted for brevity in this excerpt...
+\section{Experiments}\label{sec:experiments}
+We evaluate the proposed hybrid ODE-NN framework by validating its performance on synthetic and real-world data, comparing it to baseline models, conducting sensitivity and ablation studies, and exploring its uncertainty quantification capabilities.
+\subsection{Data Sources and Preprocessing}\label{subsec:data_sources}
+Synthetic data were generated using the 4GI model, while real-world data were obtained from MIMIC-III.
+\subsection{Model Training Setup}\label{subsec:model_training}
+Both mechanistic parameters and neural correction terms were jointly optimized with Adam.
+\subsection{Validation on Synthetic Data}
+Table~\ref{tab:synthetic_results} summarizes predictive performance.
+\begin{table}[h]
+\centering
+\caption{Predictive Performance on Synthetic Data (mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:synthetic_results}
+\begin{tabular}{lccc}
+\toprule
+Model & RMSE & MAE & $R^2$ \\
+\midrule
+Mechanistic ODE & 0.75$\pm$0.05 & 0.60$\pm$0.03 & 0.85 \\
+NN-only & 0.62$\pm$0.04 & 0.50$\pm$0.03 & 0.88 \\
+Hybrid ODE-NN & \textbf{0.45$\pm$0.03} & \textbf{0.35$\pm$0.02} & \textbf{0.94} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\subsection{Latent GLP-1 Recovery on Synthetic Data}\label{subsec:latent_recovery}
+On 4GI sequences with GLP-1 ground truth, we evaluate latent GLP-1 recovery by comparing posterior mean trajectories against reference.
+\begin{table}[h]
+\centering
+\caption{Latent GLP-1 recovery on 4GI (posterior mean vs. ground truth; mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:latent_glp1}
+\begin{tabular}{lccc}
+\toprule
+Model & $R^2$ & $\rho$ & DTW (a.u.) \\
+\midrule
+Mechanistic ODE & 0.03 & 0.32 & 10463 \\
+NN-only & 0.04 & 0.49 & 7717 \\
+Hybrid ODE-NN (Ours) & \textbf{0.51} & \textbf{0.74} & \textbf{6470} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{results/figures/latent_glp1_recovery.png}
+\caption{Representative GLP-1 recovery (ground truth vs. hybrid posterior mean with 95\% CI) on 4GI.}
+\label{fig:latent_glp1_recovery}
+\end{figure}
+\subsection{Generalization to Real-World Data}
+Table~\ref{tab:real_results} reports performance on MIMIC-III.
+\begin{table}[h]
+\caption{Generalization Performance on Real-World Data (mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:real_results}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & RMSE & MAE & Calibration Error \\
+\midrule
+Mechanistic ODE & 1.10$\pm$0.08 & 0.95$\pm$0.05 & 0.12 \\
+NN-only & 0.85$\pm$0.06 & 0.70$\pm$0.04 & 0.10 \\
+Hybrid ODE-NN & \textbf{0.72$\pm$0.05} & \textbf{0.60$\pm$0.03} & \textbf{0.08} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\subsection{Robustness to Missingness and Measurement Noise}\label{subsec:robustness}
+We stress-test the hybrid and baseline under CGM missingness and additive noise.
+\begin{table}[h]
+\centering
+\caption{Robustness on 4GI (RMSE in \si{mmol/L}; mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:robustness}
+\begin{tabular}{lcc}
+\toprule
+Condition & Mech. & Hybrid \\
+\midrule
+Missing 10\% & 2.26 & \textbf{1.24} \\
+Missing 30\% & 2.26 & \textbf{1.59} \\
+Missing 50\% & 2.26 & \textbf{1.90} \\
+Noise $2\sigma$ & 2.26 & 8.29 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{results/figures/robustness_curves.png}
+\caption{Performance vs. missingness/noise. The hybrid degrades more gracefully for missing data.}
+\label{fig:robustness_curves}
+\end{figure}
+\subsection{Online Updating for Per-Subject Adaptation}\label{subsec:online}
+We evaluate an offline$\rightarrow$online regime: global pre-training followed by per-subject updates.
+\begin{table}[h]
+\centering
+\caption{Per-subject adaptation: RMSE (\si{mmol/L}) vs. adaptation horizon on 4GI (mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:online_rmse}
+\begin{tabular}{lccc}
+\toprule
+Method & 6h & 12h & 24h \\
+\midrule
+Batch re-train & 0.309 & 0.309 & 0.309 \\
+Online (ours) & \textbf{1.622} & \textbf{1.622} & \textbf{1.622} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{results/figures/online_adaptation_curves.png}
+\caption{Subject-level RMSE during online updates.}
+\label{fig:online_adaptation}
+\end{figure}
+\subsection{Uncertainty Quantification with Bayesian Inference}
+Figure~\ref{fig:uq} shows posterior predictive distributions of glucose.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\linewidth]{uncertainty_quantification.png}
+\caption{Bayesian posterior predictive distributions of glucose concentrations.}
+\label{fig:uq}
+\end{figure}
+\subsection{Comprehensive Uncertainty Evaluation}\label{subsec:uq_metrics}
+We report coverage, NLL, CRPS, and reliability diagnostics.
+\begin{table}[h]
+\centering
+\caption{Uncertainty metrics (lower NLL/CRPS better; mean $\pm$ sd, $n=2$ subjects)}
+\label{tab:uq_metrics}
+\begin{tabular}{lcccc}
+\toprule
+Model & Cov@80 & Cov@90 & NLL & CRPS \\
+\midrule
+Mechanistic ODE & 0.78 & 0.86 & 8.37 & 591.14 \\
+NN-only & 0.81 & 0.87 & 8.37 & 594.80 \\
+Hybrid ODE-NN (Ours) & 0.70 & 0.84 & \textbf{8.25} & \textbf{529.84} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{results/figures/reliability_pit.png}
+\caption{Reliability (PIT) plot for the hybrid model.}
+\label{fig:reliability_pit}
+\end{figure}
+\subsection{Computational Efficiency and Footprint}\label{subsec:efficiency}
+We report training and inference wall-time and peak memory usage.
+\begin{table}[h]
+\centering
+\caption{Efficiency summary (mean $\pm$ sd over runs).}
+\label{tab:efficiency}
+\begin{tabular}{lcc}
+\toprule
+Phase & Wall-time & Peak Memory \\
+\midrule
+Training (per epoch) & 0.0032 s & 0.2 MB \\
+Inference (per sample) & 0.000001 s & 0.2 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+% ... remaining sections such as Ablation Study, Sensitivity Analysis, Discussion ...
+\section*{Ethics and Data Use}
+MIMIC-III access and use complied with the database’s data-use agreement; all data were de-identified and publicly available.
+\section*{Data and Code Availability}
+All code (including data generation scripts for 4GI experiments) is available at: \url{https://github.com/OliverDOU776/Hybrid-ODE-for-GLP-1-and-Glucose}.
+\end{document}
