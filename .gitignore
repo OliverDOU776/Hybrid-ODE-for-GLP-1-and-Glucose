@@ -88,6 +88,10 @@ docs/_build/
 docs/_static/
 docs/_templates/
 
+Adaption.md
+manuscript.tex
+modification_report.md
+
 # Claude specific
 .claude
 CLAUDE.local.md

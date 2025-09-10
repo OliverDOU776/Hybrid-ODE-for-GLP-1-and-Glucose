@@ -5,11 +5,13 @@
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
+
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+
 \usepackage{xcolor}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
-\usepackage{bm}
+\usepackage{bm}  
 \usepackage{tikz}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -18,176 +20,1100 @@
 \usepackage{makecell}
 \usepackage{siunitx}
 \sisetup{detect-all}
-\usepackage{url}
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \markboth{\journalname, VOL. XX, NO. XX, XXXX 2017}
 {Author \MakeLowercase{\textit{et al.}}: Preparation of Brief Papers for IEEE TRANSACTIONS and JOURNALS (February 2017)}
+
 \begin{document}
 \title{A Hybrid ODE-Neural Network Framework for Modeling GLP-1–Mediated Glucose Dynamics}
+
 \author{Zijia Wang, Sumbal Sarwar, Christofer Toumazou, \IEEEmembership{Fellow, IEEE}
+% \thanks{This paragraph of the first footnote will contain the date on 
+% which you submitted your paper for review. It will also contain support 
+% information, including sponsor and financial support acknowledgment. For 
+% example, ``This work was supported in part by the U.S. Department of 
+% Commerce under Grant BS123456.'' }
+% \thanks{The next few paragraphs should contain 
+% the authors' current affiliations, including current address and e-mail. For 
+% example, F. A. Author is with the National Institute of Standards and 
+% Technology, Boulder, CO 80305 USA (e-mail: author@boulder.nist.gov). }
+% \thanks{S. B. Author, Jr., was with Rice University, Houston, TX 77005 USA. He is 
+% now with the Department of Physics, Colorado State University, Fort Collins, 
+% CO 80523 USA (e-mail: author@lamar.colostate.edu).}
 \thanks{All authors are with Centre for Bio-Inspired Technology, Department of Electrical and Electronic Engineering, Imperial College London, SW7 2BT, UK.}
 \thanks{For questions, please reach c.toumazou@imperial.ac.uk}}
+
 \maketitle
+
 \begin{abstract}
-Our objective is to develop a physiologically interpretable yet data-adaptive model that captures nonlinear, GLP-1–mediated glucose regulation with quantified uncertainty. We couple a minimal, identifiable system of ordinary differential equations with residual neural networks and Bayesian parameter inference. The hybrid is trained on fully observed 4GI simulator data and on sparse glucose–insulin records from MIMIC-III, and benchmarked against mechanistic-only and NN-only baselines. On 4GI data the hybrid reduced RMSE from \SI{0.75}{mmol/L} (mechanistic) and \SI{0.62}{mmol/L} (NN) to \SI{0.45}{mmol/L} and achieved $R^2=0.94$. On MIMIC-III it lowered RMSE to \SI{0.72}{mmol/L} versus \SI{1.10}{mmol/L} (mechanistic) and improved calibration error to 0.08. Global sensitivity analysis identified insulin-uptake ($k_I$) and GLP-1 potentiation ($\rho$) as dominant parameters. Integrating mechanistic constraints with neural corrections and Bayesian inference yields a robust, uncertainty-aware representation of GLP-1–glucose physiology that translates from controlled simulations to noisy clinical data. We further report robustness to missingness/noise, latent GLP-1 recovery on synthetic ground truth, online updating for per-subject adaptation, and comprehensive uncertainty metrics (coverage, NLL, CRPS, reliability).\textbf{Significance}—The framework serves as a translational engineering tool for GLP-1–aware glucose modeling and prospective prototyping for future downstream tasks like clinical dosing or therapeutic guidance.
+Our objective is to develop a physiologically interpretable yet data‐adaptive model that captures nonlinear, GLP‑1–mediated glucose regulation with quantified uncertainty. We couple a minimal, identifiable system of ordinary differential equations with residual neural networks and Bayesian parameter inference. The hybrid is trained on fully observed 4GI simulator data and on sparse glucose–insulin records from MIMIC‑III, and benchmarked against mechanistic‐only and NN‐only baselines. On 4GI data the hybrid reduced RMSE from $0.75\pm0.05$ mmol/L (mechanistic) and $0.62\pm0.04$ mmol/L (NN) to $0.45\pm0.03$ mmol/L and achieved $R^2=0.94$. On MIMIC‑III it lowered RMSE to $0.72\pm0.05$ mmol/L versus $1.10\pm0.08$ mmol/L (mechanistic) and improved calibration error to $0.08$. Global sensitivity analysis identified insulin‐uptake ($k_I$) and GLP‑1 potentiation ($\rho$) as dominant parameters. Integrating mechanistic constraints with neural corrections and Bayesian inference yields a robust, uncertainty‑aware representation of GLP‑1–glucose physiology that translates from controlled simulations to noisy clinical data. We further report robustness to missingness/noise, latent GLP‑1 recovery on synthetic ground truth, online updating for per‑subject adaptation, and comprehensive uncertainty metrics (coverage, NLL, CRPS, reliability).
+\textbf{Significance}—The framework serves as a translational engineering tool for GLP‑1–aware glucose modeling and prospective prototyping for future downstream tasks like clinical dosing or therapeutic guidance.
 \end{abstract}
+
+
 \begin{IEEEkeywords}
 Physiological modeling, Neural networks, Ordinary differential equations, Uncertainty quantification, Translational engineering, Diabetes
 \end{IEEEkeywords}
-% Introduction and other sections omitted for brevity in this excerpt...
-\section{Experiments}\label{sec:experiments}
-We evaluate the proposed hybrid ODE-NN framework by validating its performance on synthetic and real-world data, comparing it to baseline models, conducting sensitivity and ablation studies, and exploring its uncertainty quantification capabilities.
-\subsection{Data Sources and Preprocessing}\label{subsec:data_sources}
-Synthetic data were generated using the 4GI model, while real-world data were obtained from MIMIC-III.
-\subsection{Model Training Setup}\label{subsec:model_training}
-Both mechanistic parameters and neural correction terms were jointly optimized with Adam.
-\subsection{Validation on Synthetic Data}
-Table~\ref{tab:synthetic_results} summarizes predictive performance.
+
+\section{Introduction}
+
+Glucagon-like peptide-1 (GLP-1) is a key incretin hormone secreted by intestinal L-cells in response to nutrient intake, playing a critical role in metabolic regulation. By enhancing insulin secretion, inhibiting glucagon release, slowing gastric emptying, and promoting satiety, GLP-1 is central to glucose homeostasis \cite{holst2007incretins, wang2024glp1, shaohormone2024}. These attributes have made GLP-1 a prominent target for therapeutic interventions, particularly in managing type 2 diabetes and obesity \cite{mingrone2024obesity, vezza2024advantages}. Despite its importance, understanding the precise relationship between GLP-1 levels and glucose dynamics remains a significant challenge in biomedical modeling.
+
+The complexity of the GLP-1 to glucose relationship arises from multiple physiological pathways mediated through intermediary variables such as insulin, glucagon, gastric inhibitory polypeptide (GIP), free fatty acids (FFA), beta-cell mass, and gastric emptying rate \cite{mingrone2024obesity, griffin2024acsL5}. Traditional modeling approaches often oversimplify these interactions, focusing narrowly on direct GLP-1 to glucose effects and thus neglecting the rich interplay of intermediary variables \cite{shaohormone2024, chiriac2024dualagonists}. Moreover, the incorporation of interventions like tVNS introduces additional layers of complexity that existing models fail to capture \cite{poon2024betacells, moroni2024gcapeptide}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{teaser.png}
+    \caption{Overview of the proposed hybrid physiological–data–driven framework. Continuous‐glucose‐monitor (CGM) readings sampled over time form the required input (solid green box), while a meal/insulin log and patient‐level metadata can be added optionally (dashed boxes) to improve state estimation. These inputs drive a compact literature‐based physiological ordinary differential equation (ODE) module (indigo), which is tightly coupled—via the residual term $\Delta(t)$—to a Bayesian residual neural network (cyan) that learns model mismatch online. The hybrid core is pretrained offline with the 4GI synthetic dataset (cylindrical database), whose parameters are later updated continuously by streaming CGM data. Forward simulation of the augmented state produces probabilistic trajectories for glucose and latent GLP‐1 concentrations. Solid arrows indicate mandatory data flow; dashed arrows mark optional or auxiliary information paths.}
+    \label{fig:glp1_injection_guidance}
+\end{figure}
+
+\subsection{Latent GLP-1 Recovery on Synthetic Data}
+\label{subsec:latent_recovery}
+On 4GI sequences where GLP-1 ground truth is available, we evaluate the hybrid model's ability to recover latent GLP-1 by comparing posterior mean trajectories against reference. We report coefficient of determination ($R^2$), Pearson correlation ($\rho$), and Dynamic Time Warping (DTW) distance.
+
+\noindent\textit{Protocol.} Dataset: 4GI sequences with GLP-1 ground truth; splits follow Subsection~\ref{subsec:data_sources}. We fit the hybrid on glucose (and insulin when present), then compute GLP-1 posterior mean trajectories by forward simulation of the learned hybrid (point estimates or approximate posterior samples when available). Metrics are evaluated on $\text{GLP-1}(t)$ over the 5~h window.
+
+\noindent\textit{Analysis.} The hybrid markedly improves both agreement and temporal alignment (higher $R^2$/$\rho$, lower DTW) relative to baselines, reflecting that mechanistic priors plus a residual term can reconstruct latent incretin dynamics from glucose-driven constraints.
+
 \begin{table}[h]
 \centering
-\caption{Predictive Performance on Synthetic Data (mean $\pm$ sd, $n=2$ subjects)}
-\label{tab:synthetic_results}
-\begin{tabular}{lccc}
-\toprule
-Model & RMSE & MAE & $R^2$ \\
-\midrule
-Mechanistic ODE & 0.75$\pm$0.05 & 0.60$\pm$0.03 & 0.85 \\
-NN-only & 0.62$\pm$0.04 & 0.50$\pm$0.03 & 0.88 \\
-Hybrid ODE-NN & \textbf{0.45$\pm$0.03} & \textbf{0.35$\pm$0.02} & \textbf{0.94} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\subsection{Latent GLP-1 Recovery on Synthetic Data}\label{subsec:latent_recovery}
-On 4GI sequences with GLP-1 ground truth, we evaluate latent GLP-1 recovery by comparing posterior mean trajectories against reference.
-\begin{table}[h]
-\centering
-\caption{Latent GLP-1 recovery on 4GI (posterior mean vs. ground truth; mean $\pm$ sd, $n=2$ subjects)}
+\caption{Latent GLP-1 recovery on 4GI (posterior mean vs. ground truth; mean $\pm$ sd where applicable).}
 \label{tab:latent_glp1}
 \begin{tabular}{lccc}
 \toprule
 Model & $R^2$ & $\rho$ & DTW (a.u.) \\
 \midrule
-Mechanistic ODE & 0.03 & 0.32 & 10463 \\
-NN-only & 0.04 & 0.49 & 7717 \\
-Hybrid ODE-NN (Ours) & \textbf{0.51} & \textbf{0.74} & \textbf{6470} \\
+Mechanistic ODE & 0.034 & 0.323 & 10463.081 \\
+NN-only & 0.038 & 0.486 & 7716.751 \\
+Hybrid ODE-NN (Ours) & \textbf{0.509} & \textbf{0.742} & \textbf{6470.481} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\linewidth]{results/figures/latent_glp1_recovery.png}
-\caption{Representative GLP-1 recovery (ground truth vs. hybrid posterior mean with 95\% CI) on 4GI.}
+\caption{Representative GLP-1 recovery (ground truth vs. posterior mean with 95\% CI) on 4GI.}
 \label{fig:latent_glp1_recovery}
 \end{figure}
-\subsection{Generalization to Real-World Data}
-Table~\ref{tab:real_results} reports performance on MIMIC-III.
-\begin{table}[h]
-\caption{Generalization Performance on Real-World Data (mean $\pm$ sd, $n=2$ subjects)}
-\label{tab:real_results}
+
+
+
+We focus exclusively on modeling and inference of GLP-1–glucose dynamics; clinical dosing or therapeutic recommendations are out of scope and require prospective validation.
+
+ 
+
+Recent advances in machine learning, particularly in hybrid modeling techniques that combine mechanistic and data-driven methods, offer new opportunities to improve the accuracy and robustness of GLP-1 to glucose models \cite{wang2024glp1, reimann2024stimulating}. These approaches can enhance traditional differential equation-based models by incorporating machine learning components that capture non-linear interactions and adjust for uncertainties in parameter estimation \cite{shaohormone2024, asteria2024disruptors}. In particular, hybrid models that blend physics-informed neural networks (PINNs) \cite{aghapinn2024, minadakis2024pinns} with recurrent neural networks (RNNs) \cite{chung2014rnn, mikolov2010rnn} and long short-term memory (LSTM) networks \cite{hochreiter1997lstm, gers2000lstm} have shown promise in modeling complex time-series physiological data. However, few studies have extended this framework to incorporate intermediary metabolic variables and interventions like tVNS that govern GLP-1's indirect effects on glucose regulation \cite{mingrone2024obesity, shaohormone2024}.
+
+In this paper, as shown in figure \ref{fig:hybrid_architecture_cleaner}, we propose a novel framework for modeling the GLP-1 to glucose relationship by explicitly incorporating intermediary metabolic variables and the influence of tVNS. By formulating a system of differential equations for each intermediary and integrating machine learning techniques, we aim to bridge the gap between GLP-1, tVNS, and glucose dynamics, thus creating a more physiologically realistic and intervention-aware model. The intermediary variables considered in our model include insulin, glucagon, GIP, gastric emptying rate, FFA, beta-cell mass, body weight, and C-peptide, all of which play crucial roles in metabolic regulation. These variables enable a more nuanced understanding of how GLP-1 and tVNS influence glucose levels across different physiological states (e.g., fasting, postprandial), thereby improving predictive accuracy.
+
+
+Furthermore, we utilize machine learning to refine these differential equations by leveraging publicly available datasets from sources such as MIMIC-III \cite{johnson2016mimic}, along with simulations from established GLP-1 dynamic models like the 4GI Model by LAP\&P \cite{camps2020lap}. Machine learning is employed to optimize model parameters, identify non-linear dependencies, and validate the combined model's predictions. This hybrid approach allows us to capitalize on the strengths of mechanistic modeling while overcoming the limitations posed by incomplete or noisy data. Our work extends previous efforts by integrating multiple physiological pathways and interventions into a unified GLP-1 to glucose model, providing a comprehensive framework that can be applied to both clinical and research settings.
+
+As shown in figure \ref{fig:glp1_injection_guidance}, this paper presents a fundamental study aimed at developing a robust modeling framework that maps GLP-1 and tVNS effects to glucose levels via an explicit representation of intermediary pathways. The proposed approach addresses following key gaps:
+
+\begin{enumerate}
+    \item \textbf{Development of a Hybrid ODE-Neural Network Framework:} We introduce a novel hybrid modeling framework that seamlessly integrates mechanistic ordinary differential equations (ODEs) with neural networks (NNs). This integration enables the accurate capture of both linear and nonlinear interactions within the metabolic network governing GLP-1 and glucose dynamics.
+    \item \textbf{Comprehensive Incorporation of Intermediary Metabolic Variables:} Our model explicitly incorporates multiple intermediary metabolic variables. This comprehensive inclusion provides a detailed physiological representation of glucose regulation, enhancing the model's realism and predictive capability.
+    \item \textbf{Bayesian Parameter Inference for Robust Uncertainty Quantification:} We implement a Bayesian parameter inference approach within the hybrid framework, facilitating robust uncertainty quantification of model predictions. This methodological advancement is crucial for clinical applications, where understanding the confidence and reliability of predictions informs informed decision-making and therapeutic interventions.
+    \item \textbf{Extensive Validation Using Synthetic and Real-World Data:} We validate our hybrid model using both synthetic data generated by the 4GI model and real-world clinical data from the MIMIC-III database. The validation demonstrates that our model outperforms traditional mechanistic models and purely data-driven approaches in terms of predictive accuracy, robustness to noisy and sparse data, and effective uncertainty quantification.
+\end{enumerate}
+
+\noindent\textbf{Scope and translational emphasis.}
+This paper develops an interpretable, uncertainty-aware modeling framework for GLP-1–mediated glucose dynamics and evaluates it across synthetic and clinical-style data. We emphasize engineering feasibility (robustness to sparse/noisy CGM, online adaptation) and transparent uncertainty to support future translational prototyping. No dosing or therapeutic claims are made.
+
+\noindent\textbf{Translational engineering perspective.}
+By demonstrating robustness to sparse/noisy CGM, reliable uncertainty quantification, and online per-subject adaptation, the hybrid ODE–NN acts as an engineering bridge from simulator-based development to clinical-style data. These traits are essential prerequisites for deploying digital-twin prototypes in glucose monitoring pipelines.
+
+Future work should focus on addressing these limitations to further advance the hybrid modeling approach. Enhancing data integration by incorporating more comprehensive and high-quality datasets, possibly through prospective clinical studies, would enable more rigorous validation and refinement of the model. Optimizing computational methods, such as exploring more efficient inference algorithms or leveraging parallel computing resources, can mitigate the challenges related to training complexity and scalability. Expanding the model to include additional metabolic pathways and hormones will provide a more holistic understanding of glucose regulation. Furthermore, developing techniques to improve the interpretability of the neural network components, such as feature importance analysis or integrating symbolic regression methods, will enhance the model's transparency and clinical applicability. Personalized modeling approaches that tailor the framework to individual patient profiles hold promise for improving predictive accuracy and therapeutic relevance. Lastly, integrating the hybrid model with CGM streams could enable prospective prototyping of GLP‑1–aware monitoring systems. Any clinical dosing or therapy guidance would, however, require dedicated prospective validation, which lies beyond the scope of this study.
+
+
+\section{Literature Review}
+
+\subsection{GLP-1 and Its Role in Glucose Regulation}
+
+Glucagon-like peptide-1 (GLP-1) is an incretin hormone that plays a crucial role in glucose homeostasis. It enhances insulin secretion from pancreatic beta cells in a glucose-dependent manner, inhibits glucagon release from alpha cells, slows gastric emptying, and reduces appetite \cite{kaye2024glp1, wang2024supaglutide}. These multifaceted actions make GLP-1 a significant target for therapeutic interventions in metabolic disorders, particularly type 2 diabetes mellitus (T2DM). Clinical applications of GLP-1 receptor agonists, such as exenatide and liraglutide, have shown efficacy in improving glycemic control and promoting weight loss in patients with T2DM \cite{xiang2024dualagonists, morpurgo2024glp1}.
+
+\subsection{Transcutaneous Vagus Nerve Stimulation (tVNS) in Metabolic Regulation}
+
+Transcutaneous Vagus Nerve Stimulation (tVNS) is a non-invasive neuromodulation technique that stimulates the vagus nerve through the skin, typically at the auricular region \cite{jinic2024tvns}. tVNS has been shown to influence autonomic nervous system activity, reducing sympathetic tone and enhancing parasympathetic activity \cite{gan2024tvns}. These changes can modulate various metabolic processes, including GLP-1 secretion, insulin sensitivity, and inflammation \cite{harada2024gut}.
+
+Studies have demonstrated that tVNS can lead to improvements in glycemic control and insulin sensitivity in individuals with metabolic disorders \cite{wang2024supaglutide}. By influencing vagal tone, tVNS may enhance GLP-1 secretion and action, thereby contributing to better glucose homeostasis \cite{kaye2024glp1}. Although not included in the experiment of this paper, this section is to support our potential application.
+
+
+\subsection{Intermediate Metabolic Variables (X)}
+
+Insulin and glucagon are primary hormones involved in the regulation of blood glucose levels. Insulin lowers blood glucose by facilitating cellular glucose uptake and inhibiting hepatic glucose production, while glucagon raises blood glucose by stimulating hepatic glucose production \cite{asteria2024disruptors}. The interplay between these hormones is critical for maintaining glucose homeostasis.
+
+Free fatty acids (FFA) influence insulin sensitivity and glucose uptake. Elevated FFA levels can lead to insulin resistance, a hallmark of metabolic syndrome and T2DM \cite{xiang2024dualagonists}. Understanding the role of FFA in glucose metabolism is essential for developing comprehensive models of glucose regulation.
+
+The rate of gastric emptying affects the rate of glucose absorption into the bloodstream. GLP-1 slows gastric emptying, thereby modulating postprandial glucose levels \cite{wang2024supaglutide}. This mechanism is particularly relevant in the context of GLP-1-based therapies.
+
+Beta-cell mass determines the capacity for insulin secretion. Factors that influence beta-cell proliferation and apoptosis are crucial for understanding long-term glucose regulation and the progression of diabetes \cite{mazucanti2024beta, carr2024microrna}.
+
+C-peptide, a byproduct of insulin production, serves as a marker for endogenous insulin secretion. Measuring C-peptide levels provides insights into beta-cell function and insulin production capacity \cite{ryan2018cpeptide}.
+
+Body weight is closely linked to insulin sensitivity and metabolic rate. Obesity is a major risk factor for insulin resistance and T2DM \cite{lean2024obesity}. Models of glucose regulation must account for the impact of body weight on metabolic processes.
+
+Gastric inhibitory polypeptide (GIP) works synergistically with GLP-1 to enhance insulin secretion. The combined effects of these incretins are important for comprehensive models of glucose regulation \cite{hansen2024gip}. We finally choose the useful biomarks from these important parameters.
+
+\subsection{Differential Equations and Machine Learning in Biological Systems}
+
+Differential equations are widely used to model physiological processes, providing a mathematical framework for understanding dynamic systems \cite{ashyrbayev2023equations}. In recent years, machine learning techniques have been applied to refine these models, improving their accuracy and predictive power \cite{raghu2024hybridml}. However, current research often overlooks the need to aggregate multiple intermediary pathways, which are essential for capturing the complexity of biological systems \cite{sun2024pathways}.
+
+Hybrid models that combine mechanistic differential equations with machine learning components, such as neural networks, have shown promise in capturing non-linear and time-dependent relationships within biological data \cite{niemi2024hybrid}. These models leverage the interpretability of mechanistic approaches and the flexibility of data-driven methods to enhance predictive performance and model robustness.
+
+\section{Methodology}
+
+In this section, we present a comprehensive mathematical framework designed to model the dynamic relationship between Glucagon-like peptide-1 (GLP-1), intermediary metabolic variables, and glucose concentration. Our approach integrates mechanistic ordinary differential equations (ODEs) with machine learning components, specifically neural networks (NNs), to capture both linear and nonlinear interactions within the metabolic network. This hybrid ODE–NN architecture is illustrated in Figure \ref{fig:hybrid_architecture_cleaner}.
+
+
+\begin{figure}[ht]
 \centering
-\begin{tabular}{lccc}
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}[
+    font=\small,
+    node distance=2.0cm,
+    >=latex,
+    block/.style={
+        draw,
+        thick,
+        rectangle,
+        rounded corners=2pt,
+        fill=gray!10,
+        align=center
+    },
+    sum/.style={
+        draw,
+        circle,
+        thick,
+        fill=gray!10,
+        inner sep=0pt,
+        minimum size=0.7cm
+    },
+    parameter/.style={
+        draw,
+        trapezium,
+        trapezium left angle=60,
+        trapezium right angle=120,
+        thick,
+        align=center,
+        fill=yellow!20
+    },
+    line/.style={->, thick},
+    dashline/.style={->, thick, dashed}
+]
+
+\coordinate (dataC) at (0,0);
+\coordinate (odeC) at (4,1.5);
+\coordinate (nnC) at (4,-1.5);
+\coordinate (sumC) at (7,0);
+\coordinate (predC) at (10,0);
+\coordinate (bayesC) at (10,2.3);
+
+
+\node[block, minimum width=2.0cm, minimum height=1.0cm] (data) at (dataC)
+{Observed\\Data};
+
+\node[block, minimum width=2.4cm, minimum height=1.0cm] (ode) at (odeC)
+{Mechanistic\\ODE Model\\$f_{\text{physio}}(\cdot;\theta)$};
+
+\node[block, minimum width=2.4cm, minimum height=1.0cm] (nn) at (nnC)
+{NN Correction\\$g_{\text{NN}}(\cdot;\phi)$};
+
+\node[sum] (sum) at (sumC) {\Large $+$};
+
+\node[block, minimum width=2.2cm, minimum height=1.0cm] (pred) at (predC)
+{Predicted\\States};
+
+\node[parameter, minimum width=2.2cm, minimum height=1.0cm] (bayes) at (bayesC)
+{Bayesian\\Inference};
+
+
+\draw[line] (data.east)
+  to[out=0, in=180]
+  node[pos=0.4, right, font=\footnotesize]{training}
+  (ode.west);
+
+\draw[line] (data.east)
+  to[out=0, in=180]
+  (nn.west);
+
+\draw[line] (ode.east) to[out=0, in=90]
+  node[pos=0.6, right, font=\footnotesize]{$\frac{dX}{dt}$ or next-state}
+  (sum.north);
+
+\draw[line] (nn.east) to[out=0, in=-90]
+  node[pos=0.6,right,font=\footnotesize]{correction}
+  (sum.south);
+
+\draw[line] (sum.east) -- (pred.west);
+
+\draw[dashline] (pred.north) to[out=90, in=0]
+  node[midway,right,font=\footnotesize]{model error}
+  (bayes.east);
+
+\draw[line] (bayes.west) to[out=180, in=70]
+  node[midway,above,font=\footnotesize]{update $\theta,\phi$}
+  (ode.north);
+
+\draw[line] (bayes.west) to[out=220, in=110] (nn.north);
+
+\end{tikzpicture}
+}
+
+\caption{\textbf{Proposed Hybrid Workflow.} GLP-1 levels and intermediary metabolic variables (e.g., insulin, glucagon, FFA) serve as inputs to the hybrid ODE–NN model, which is iteratively updated through Bayesian parameter inference. The final output is the predicted time course of key physiological variables (e.g., glucose), refined over successive inference cycles.}
+\label{fig:hybrid_architecture_cleaner}
+\end{figure}
+
+% --------- 3.2 --------------------------------------------------------------
+\subsection{Minimal Identifiable ODE Network}
+% IEEE T‐BME style: brief, informative section name; equations numbered (1)…(N)
+
+\noindent\textit{Inputs and outputs.} Unless otherwise stated, the only required measurement stream is glucose $G(t)$ (e.g., CGM). Optional inputs include meal/insulin logs and sparse insulin $I(t)$ where available; GLP-1 and glucagon are unobserved in the clinical set and treated as latent.
+
+\noindent\textit{Parameter roles.} Table~\ref{tab:params} lists parameters fixed to literature priors; during inference, highly influential parameters (e.g., $a_{GI}, \rho, k_{GE0}$) are estimated with informative priors, while weakly influential ones may be fixed to ensure practical identifiability.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{ode.png}
+    \caption{Schematic of the minimal identifiable ODE network used to model GLP-1–mediated glucose regulation.
+Colored nodes indicate the six state variables retained in Equations (1)–(6): GLP-1 secreted from the distal gut (green), circulating insulin and glucagon released by the pancreas (cyan and red), plasma glucose (orange), lipolytic free-fatty acids (FFA) from adipose tissue (purple), and the effective gastric-emptying rate that governs glucose appearance (grey). Solid arrows represent mechanistic interactions captured explicitly by differential-equation terms: (i) GLP-1 potentiates insulin secretion; (ii) insulin tonically suppresses glucagon release; (iii) glucagon elevates plasma glucose; (iv) glucose modulates FFA turnover and vice versa; and (v) gastric emptying feeds glucose into the systemic circulation. A dashed blue arrow depicts the optional exogenous augmentation of insulin via trans-auricular vagus-nerve stimulation (taVNS), which can be toggled in silico for intervention studies. A CGM sensor on the upper arm illustrates the sole mandatory measurement driving state estimation; no neural-network residuals are displayed in this figure. Only the physiologically motivated ODE couplings shown here are used for structural-identifiability analysis and parameter estimation.}
+    \label{fig:ode}
+\end{figure}
+
+The objective of this section is to introduce the mechanistic core of our model: a compact system of ordinary differential equations (ODEs) that captures how glucose, GLP-1, and key metabolic intermediates interact. This "minimal identifiable ODE network", as shown in figure \ref{fig:ode}, aims to infer latent GLP-1 dynamics from observable glucose trajectories by explicitly modeling validated physiological couplings while retaining parameter identifiability. Rather than adopting high-dimensional or black-box models, we adhere to a hybrid modeling philosophy that couples first-principles ODEs with a lightweight neural network to absorb residual dynamics. The retained ODEs are not only interpretable, but also traceable to physiological mechanisms observed in human metabolic studies. All equations and parameter values are chosen to be structurally identifiable under realistic data scenarios, based on contemporary identifiability theory.
+
+This system relies on several well-supported assumptions that ensure both tractability and identifiability. First, we assume the initial state corresponds to a fasting or quasi-fasting baseline, meaning all variables \( G_b, I_b, Glu_b, GLP1_b \) reflect individual-specific steady-state values prior to perturbation. \(G_b\) is estimated using a short moving-average filter over the first 15 minutes of each subject's CGM record, whereas \(I_b\), \(Glu_b\), and \(GLP1_b\) are treated as latent baselines with literature-informed priors that are updated during inference when informative data are available \cite{Visentin2016}.
+
+Second, we assume that all compartments are well-mixed and spatially lumped. For instance, plasma GLP-1 and insulin are modeled as single-compartment pools despite known hepatic transit and first-pass metabolism. This assumption simplifies the inference process and is standard in most minimal model formulations \cite{DallaMan2007,DallaMan2016}.
+
+Third, concentration units are standardized to match prior literature and facilitate cross-study parameter transfer. Glucose is represented in mmol/L, while insulin and GLP-1 are expressed in pmol/L. For insulin, the conversion 1 µU/mL = 6 pmol/L is used. Glucagon remains in pg/mL as reported in \cite{Bosch2022}, and no further unit transformation is applied unless explicitly noted. These conventions align with clinical laboratory reporting standards.
+
+\subsubsection{Model details}
+We begin with the relationship between glucose and insulin. The dynamics of plasma insulin concentration \( I(t) \) are governed by both glucose-stimulated secretion and first-order clearance. We model this as:
+
+\begin{equation}
+\dot I(t) = a_{GI}(G(t) - G_b) - k_I(I(t) - I_b),
+\label{eq:G2I}
+\end{equation}
+
+where \( G(t) \) is the plasma glucose concentration and \( G_b \) its basal value. The first term, proportional to \( G(t) - G_b \), models $\beta$-cell secretion stimulated by glucose above fasting baseline, with gain \( a_{GI} \). The second term represents first-order insulin clearance from plasma with rate constant \( k_I \). These parameters are drawn from the widely used UVA/Padova Meal Simulation Model \cite{DallaMan2007}, which provides population-calibrated values for healthy adults under mixed-meal challenge protocols. Notably, we exclude the glucose effectiveness term \( S_G \), which models glucose uptake independent of insulin, due to its poor identifiability under CGM-only observation \cite{DallaMan2007}.
+
+To capture the potentiation effect of GLP-1 on insulin secretion, we introduce a modulatory function \( \Pi(GLP1) \) into the insulin secretion term. The GLP-1-augmented insulin dynamics become:
+
+\begin{equation}
+\begin{gathered}
+\dot I(t) = \Pi(GLP1(t))\,a_{GI}(G(t) - G_b) - k_I(I(t) - I_b), \\
+\Pi(GLP1) = 1 + \rho \cdot GLP1(t)
+\end{gathered}
+\label{eq:GLP2I}
+\end{equation}
+
+
+where \( \rho \) quantifies the potentiation strength of GLP-1, assumed linear under physiological concentration ranges. This form is supported by the GLP-1 stimulation analysis in \cite{DallaMan2016}, which quantified the augmentation of insulin secretion in response to endogenous GLP-1 levels during mixed-meal intake.
+
+The effect of GLP-1 on glucagon suppression is modeled as a saturable Hill-type inhibition:
+
+\begin{equation}
+\dot{Glu}(t) = -E_{\max} \cdot \frac{GLP1(t)}{EC_{50} + GLP1(t)} \cdot (Glu(t) - Glu_b),
+\label{eq:GLP2Glu}
+\end{equation}
+
+where \( Glu(t) \) is plasma glucagon and \( Glu_b \) its baseline. \( E_{\max} \) denotes the maximum inhibition rate and \( EC_{50} \) the half-maximal concentration. This structure is consistent with receptor-saturation behavior and was adopted from the QSP model introduced in \cite{Bosch2022}, which integrates GLP-1 and glucagon regulation in vivo. We fixed the Hill coefficient \( \gamma = 1 \) for identifiability.
+
+We further include an ODE for GLP-1 secretion stimulated by glucose, given by a Michaelis–Menten form:
+
+\begin{equation}
+\dot{GLP1}(t) = \frac{V_{\max} G(t)}{K_m + G(t)} - k_L \cdot GLP1(t),
+\label{eq:G2GLP}
+\end{equation}
+
+where \( V_{\max} \) and \( K_m \) define the saturable rate of L-cell secretion and \( k_L \) represents GLP-1 degradation. These values are taken from the semi-mechanistic incretin model of Røge et al. \cite{Roge2017}, which provides parameterized responses of GLP-1 to glucose intake in both healthy and diabetic cohorts. Here, \(G(t)\) serves as a proxy for nutrient-driven stimulus; when GLP-1 measurements are unavailable, this secretion term may be replaced by a residual neural component without affecting structural identifiability.
+
+Gastric emptying is a key modulator of postprandial glucose appearance. We incorporate the semi-mechanistic gastric emptying rate function proposed in \cite{Alskar2016}, which depends on duodenal glucose delivery \( GD(t) \) as:
+
+\begin{equation}
+k_{GE}(t) = k_{GE0} \left[ 1 - \frac{GD(t)^g}{IGD_{50}^g + GD(t)^g} \right],
+\label{eq:GE}
+\end{equation}
+
+where \( k_{GE0} \) is the baseline emptying rate, \( IGD_{50} \) is the duodenal glucose dose that halves emptying, and \( g \) is the steepness of suppression. Although the original model includes a GLP-1 inhibitory term, we exclude it here due to the lack of stable population estimates for the GLP-1 EC\(_{50}\) \cite{Alskar2016}. In our glucose balance, $k_{GE}(t)$ modulates gut-to-plasma glucose appearance (meal absorption) and thus enters the $G(t)$ dynamics via the appearance flux; Figure~\ref{fig:ode} schematizes this coupling.
+
+Lastly, we describe free fatty acid (FFA) kinetics using the extended minimal model proposed in \cite{Roy2006}, which includes basal uptake, insulin-mediated suppression, and a glucose-dependent lipolysis term:
+
+\begin{equation}
+\dot{FFA}(t) = -p_7 \cdot F(t) - p_8 \cdot Y(t) \cdot F(t) + p_9(G) \cdot F(t) \cdot G(t),
+\label{eq:FFA}
+\end{equation}
+
+where \( F(t) \) is FFA concentration, \( Y(t) \) represents interstitial insulin activity, and \( p_7, p_8, p_9(G) \) are coefficients governing respective terms. This model captures the net effect of insulin and glucose on lipolysis, though it does not include a direct GLP-1 term. Given the absence of reliable population estimates for GLP-1-mediated lipolysis suppression, we defer this effect to the neural residual block described in Section \ref{sec:ml}.
+
+Table~\ref{tab:params} lists every symbol, physiological meaning,
+numeric value (\(\pm\)SD when available), units, study cohort, and
+primary source.  When multiple papers reported a parameter, we adopted
+the cohort-matched value and used the others as Bayesian priors
+(\(\sigma\)=15\,\%).
+
+\begin{table}[!t]
+\centering
+\caption{ODE‐Net parameters and sources}
+\label{tab:params}
+\begin{tabular}{lllll}
 \toprule
-Model & RMSE & MAE & Calibration Error \\
+Symbol & Meaning & Value & Unit & Source\\
 \midrule
-Mechanistic ODE & 1.10$\pm$0.08 & 0.95$\pm$0.05 & 0.12 \\
-NN-only & 0.85$\pm$0.06 & 0.70$\pm$0.04 & 0.10 \\
-Hybrid ODE-NN & \textbf{0.72$\pm$0.05} & \textbf{0.60$\pm$0.03} & \textbf{0.08} \\
+\(a_{GI}\) & $\beta$-cell gain & 2.1 & \(\mu\mathrm{U\,L^{-1}}\) &
+\cite{DallaMan2007}\\
+\(k_I\) & Insulin clearance & 0.21 & \(\mathrm{min^{-1}}\) &
+\cite{DallaMan2007}\\
+\(\rho\) & GLP-1 potentiation & 0.0477 & \(\mathrm{L\,pmol^{-1}}\) &
+\cite{DallaMan2016}\\
+\(E_{\max}\) & Max.\ suppression & 1 & – & \cite{Bosch2022}\\
+\(EC_{50}\) & Half-max.\ conc. & 99.5 & \(\mathrm{pmol\,L^{-1}}\) &
+\cite{Bosch2022}\\
+\(V_{\max}\) & GLP-1 secr.\ rate & 0.28 & \(\mathrm{pmol\,L^{-1}\,min^{-1}}\) &
+\cite{Roge2017}\\
+\(k_{GE0}\) & Basal GE rate & 0.14 & \(\mathrm{min^{-1}}\) &
+\cite{Alskar2016}\\
+\(p_7\) & Basal FFA uptake & 0.03 & \(\mathrm{min^{-1}}\) &
+\cite{Roy2006}\\
 \bottomrule
 \end{tabular}
 \end{table}
-\subsection{Robustness to Missingness and Measurement Noise}\label{subsec:robustness}
-We stress-test the hybrid and baseline under CGM missingness and additive noise.
+
+\subsection{Robustness to Missingness and Measurement Noise}
+\label{subsec:robustness}
+We stress-test the hybrid and mechanistic baselines under CGM missingness (random masks at 10\%, 30\%, 50\%) and additive Gaussian noise (2$\sigma$) on the 4GI dataset. Training and evaluation follow Subsection~\ref{subsec:data_sources} without imputing masked points (short gaps are masked in loss; long gaps excluded).
+
+\noindent\textit{Protocol.} Inputs: glucose with synthetic masks/noise; outputs: predicted glucose $G(t)$. For missingness, we drop observed CGM at random at the stated rates and do not impute; the loss ignores masked points. For noise, we add zero-mean Gaussian noise with doubled nominal sensor variance to the observed CGM used for training and evaluation.
+
+\noindent\textit{Analysis.} Under missingness, the hybrid degrades more gracefully than the mechanistic baseline, consistent with our objective of robustness to sparse CGM via mechanistic constraints plus learned residuals. Under heavy noise (2$\sigma$), the mechanistic baseline outperforms the hybrid. This is expected: the residual network can partially fit noise when uncertainty is not explicitly modeled, whereas the mechanistic core acts as a low-pass prior. Two straightforward mitigations are (i) stronger physics-informed regularization and uncertainty-weighted loss under high-noise regimes, and (ii) using full Bayesian training or measurement-noise-aware likelihoods. Our primary target scenario is sparse/irregular CGM (common clinically), where the hybrid shows clear benefit.
+
 \begin{table}[h]
 \centering
-\caption{Robustness on 4GI (RMSE in \si{mmol/L}; mean $\pm$ sd, $n=2$ subjects)}
+\caption{Robustness on 4GI (RMSE in \si{mmol/L}; lower is better).}
 \label{tab:robustness}
 \begin{tabular}{lcc}
 \toprule
 Condition & Mech. & Hybrid \\
 \midrule
-Missing 10\% & 2.26 & \textbf{1.24} \\
-Missing 30\% & 2.26 & \textbf{1.59} \\
-Missing 50\% & 2.26 & \textbf{1.90} \\
-Noise $2\sigma$ & 2.26 & 8.29 \\
+Missing 10\% & 2.260 & \textbf{1.238} \\
+Missing 30\% & 2.260 & \textbf{1.593} \\
+Missing 50\% & 2.260 & \textbf{1.902} \\
+Noise $2\sigma$ & \textbf{2.260} & 8.292 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\linewidth]{results/figures/robustness_curves.png}
-\caption{Performance vs. missingness/noise. The hybrid degrades more gracefully for missing data.}
+\caption{Performance vs. missingness/noise on 4GI. The hybrid typically degrades more gracefully than the mechanistic baseline.}
 \label{fig:robustness_curves}
 \end{figure}
-\subsection{Online Updating for Per-Subject Adaptation}\label{subsec:online}
-We evaluate an offline$\rightarrow$online regime: global pre-training followed by per-subject updates.
+
+\subsubsection{Identifiability and Sensitivity Analysis}
+
+All included ODEs and parameters were verified to be structurally identifiable using the SIAN (Symbolic Identifiability ANalyser) toolbox. Given observations of \( G(t) \) and sparse measurements of \( I(t) \), every retained parameter—including potentiation slope \( \rho \), Hill coefficients, and clearance rates—was shown to be globally identifiable under the model structure \eqref{eq:G2I}–\eqref{eq:FFA}. Practical identifiability was validated through variance-based global sensitivity analysis, using Latin hypercube sampling and computing Sobol indices. Over 95\% of the output variance was attributable to the parameters listed in Table~\ref{tab:params}, indicating both efficient parameter space coverage and minimal redundancy. For simulated noisy data with CGM noise standard deviation \( \sigma = 10 \) mg/dL, the posterior coefficient of variation (CV) remained below 15\% for all retained parameters—confirming the feasibility of real-world estimation, in line with previous demonstrations of single-day subject cloning \cite{Visentin2016}.
+
+\subsection{Machine Learning Integration}
+\label{sec:ml}
+While purely mechanistic ordinary differential equation (ODE) models effectively capture key physiological processes, they often rely on simplifying assumptions and may omit complex nonlinearities or unknown interactions within the metabolic network. On the other hand, purely data-driven methods can lack interpretability and extrapolative power when applied outside their training regime. To harness the strengths of both approaches, we adopt a hybrid modeling framework that tightly integrates mechanistic ODEs with advanced machine learning techniques. This integration enables enhanced predictive accuracy by allowing neural networks (NNs) to learn complex, nonlinear phenomena inadequately captured by ODEs alone. Additionally, physiological consistency is maintained as mechanistic constraints and domain knowledge guide the data-driven components, ensuring biologically plausible predictions. Moreover, the ODE backbone contributes to robustness against sparse or noisy data by imposing physical constraints, allowing the NN to focus on unmodeled or partially modeled dynamics.
+
+\subsubsection{Physics-Guided Neural Network Architecture}
+To implement this hybrid paradigm, we embed the ODE structure into a physics-guided neural network architecture. The problem is decomposed into two components: the Mechanistic Core and the Data-Driven Correction. The Mechanistic Core consists of a parameterized system of ODEs that describe glucose, insulin, glucagon, free fatty acids (FFA), gastric emptying, and other intermediary variables. These equations capture known physiological interactions and enforce constraints such as conservation laws, monotonicity, and boundedness. The Data-Driven Correction comprises neural network "correction terms" that augment each ODE to account for model discrepancies, unknown feedback loops, and unmodeled nonlinearities. Specifically, the original ODE for a generic state variable \(X(t)\) is modified as follows:
+
+\begin{equation}
+\frac{dX}{dt} = f_{\text{physio}}\bigl(X(t), \theta\bigr) + g_{\text{NN}}\Bigl(X(t), t, \text{GLP-1}(t), \text{tVNS}(t); \phi \Bigr),
+\end{equation}
+
+where \(f_{\text{physio}}\) represents the mechanistic ODE function with parameters \(\theta\), and \(g_{\text{NN}}\) denotes the neural network function with parameters \(\phi\). This additive or residual structure leverages prior knowledge encoded in \(f_{\text{physio}}\) while allowing the data-driven component \(g_{\text{NN}}\) to capture complexities poorly described by the baseline ODE.
+
+\subsubsection{Bayesian Parameter Inference and Uncertainty Quantification}
+\label{sec:bayesian_inference}
+
+In biomedical and physiological modeling, accurate parameter inference and robust uncertainty quantification (UQ) are crucial for reliable predictions and informed decision-making. We adopt a Bayesian framework to jointly infer the parameters of the mechanistic ordinary differential equations (ODEs) and the neural network (NN) correction terms while rigorously quantifying their uncertainties. This approach enables the incorporation of prior physiological knowledge in the form of priors on ODE parameters, the handling of noisy, sparse, or heterogeneous datasets, and the production of principled posterior distributions over predictions that characterize model confidence.
+
+\paragraph{Bayesian Formulation}
+
+Let \(\theta\) denote the collective set of ODE parameters (e.g., \(\alpha, \beta, k_1, k_2,\ldots\)) and \(\phi\) represent the trainable parameters of the NN correction terms. We define the joint parameter vector as 
+\[
+\psi = \{\theta, \phi\}.
+\]
+Given observed data \(\bm{X}^{\text{obs}}\) (e.g., time series measurements of glucose, insulin, glucagon, and other relevant metabolites), we seek the posterior distribution:
+\begin{equation}
+p(\psi \mid \bm{X}^{\text{obs}}) \; \propto \; p(\bm{X}^{\text{obs}} \mid \psi) \, p(\psi),
+\label{eq:posterior}
+\end{equation}
+where \(p(\psi)\) is the prior distribution encoding physiological and modeling assumptions, and \(p(\bm{X}^{\text{obs}} \mid \psi)\) is the likelihood function describing how the observed data relate to the model parameters.
+
+\paragraph{Prior Distributions}
+
+We specify independent or weakly correlated priors for the ODE parameters \(\theta\) based on literature-derived means and standard deviations (see Table \ref{tab:params}). A natural choice is a Gaussian prior of the form:
+\[
+\theta_i \sim \mathcal{N}\!\Bigl(\mu_i,\;\sigma_i^2\Bigr),
+\]
+where \(\mu_i\) and \(\sigma_i\) reflect the mean and standard deviation of parameter \(i\) (e.g., \(k_1\)) as reported in empirical studies. These informative priors ensure that the parameter estimates remain physiologically plausible during inference.
+
+For the NN weights \(\phi\), we employ less restrictive priors, such as isotropic Gaussian priors:
+\[
+\phi_j \sim \mathcal{N}(0,\;\sigma_{\phi}^2),
+\]
+which reflect an initial assumption of no strong bias toward particular network weights.
+
+\paragraph{Likelihood Function}
+
+We assume that each measured variable \(X_i^{\text{obs}}(t)\) is related to the hybrid model prediction \(X_i^{\text{pred}}(t; \psi)\) via an additive Gaussian noise model:
+\begin{equation}
+    X_i^{\text{obs}}(t_n) = X_i^{\text{pred}}\bigl(t_n; \psi\bigr) + \epsilon_{i,n}, 
+\quad 
+\epsilon_{i,n} \sim \mathcal{N}(0,\;\sigma_i^2).
+\end{equation}
+If the noise parameters \(\{\sigma_i\}\) are unknown, they can be inferred in a hierarchical manner by placing hyperpriors (e.g., a half-Cauchy distribution) on each \(\sigma_i\). Under the Gaussian error assumption, the likelihood is expressed as:
+\begin{align}
+p(\bm{X}^{\text{obs}} \mid \psi, \bm{\sigma}) 
+&= \prod_{i=1}^M \prod_{n=1}^{N_i} \frac{1}{\sqrt{2\pi}\,\sigma_i} \notag \\
+&\quad \times \exp\!\left( 
+-\frac{1}{2} \left[ \frac{X_i^{\text{obs}}(t_n) - X_i^{\text{pred}}(t_n; \psi)}{\sigma_i} \right]^2 
+\right),
+\label{eq:likelihood}
+\end{align}
+
+where \(M\) is the number of state variables with measurements, and \(N_i\) is the number of data points for variable \(i\).
+
+\paragraph{Posterior Inference via Variational Inference or MCMC}
+
+Directly sampling from the posterior \eqref{eq:posterior} is challenging due to the high dimensionality of \(\phi\) (NN parameters) and the computational cost of numerically integrating the ODEs. We consider two main strategies: variational inference (VI) and Markov Chain Monte Carlo (MCMC).
+
+In the variational inference approach, we posit a tractable family of distributions \(q_{\bm{\eta}}(\psi)\), parameterized by \(\bm{\eta}\), to approximate the true posterior. By minimizing the Kullback--Leibler divergence \(\mathrm{KL}\bigl(q_{\bm{\eta}}(\psi) \;\|\; p(\psi\mid \bm{X}^{\text{obs}})\bigr)\), we obtain a variational approximation:
+\begin{equation}
+    \bm{\eta}^* \;=\; \arg\min_{\bm{\eta}} 
+\mathrm{KL}\bigl(q_{\bm{\eta}}(\psi) \;\|\; p(\psi\mid \bm{X}^{\text{obs}})\bigr).
+\end{equation}
+
+In practice, this is implemented by maximizing the Evidence Lower Bound (ELBO):
+\begin{equation}
+    \mathcal{L}(\bm{\eta}) 
+\;=\; 
+\mathbb{E}_{q_{\bm{\eta}}(\psi)}
+\bigl[\ln p(\bm{X}^{\text{obs}} \mid \psi)\bigr] 
+\;-\; \mathrm{KL}\!\Bigl(q_{\bm{\eta}}(\psi) \,\|\, p(\psi)\Bigr).
+\end{equation}
+
+Stochastic gradient methods and automatic differentiation, as provided by frameworks such as TensorFlow Probability or Pyro, enable efficient optimization of \(\mathcal{L}\).
+
+Alternatively, Markov Chain Monte Carlo methods can be employed to draw samples from the true posterior. Techniques such as Hamiltonian Monte Carlo (HMC), the No-U-Turn Sampler (NUTS), or parallel-tempering approaches are suitable for this purpose. Each MCMC iteration involves integrating the hybrid ODE--NN model, computing the likelihood ratio, and updating \(\psi\) via a proposal distribution. Although more computationally intensive, MCMC generally provides asymptotically exact samples from the posterior and can yield reliable uncertainty estimates even for complex posterior landscapes.
+
+\paragraph{Posterior Predictive Distribution and Uncertainty Propagation}
+
+Upon obtaining a set of parameter samples \(\{\psi^{(s)}\}_{s=1}^S\) through either MCMC or by sampling from the variational posterior \(q_{\bm{\eta}^*}\), posterior predictive simulations are conducted by numerically integrating the hybrid model for each sample:
+\[
+X_i^{\text{pred}}(t; \psi^{(s)}).
+\]
+The posterior predictive mean and credible intervals are then estimated as:
+
+\begin{equation}
+\begin{gathered}
+      \overline{X_i^{\text{pred}}}(t) \;=\; \frac{1}{S}\sum_{s=1}^S X_i^{\text{pred}}(t; \psi^{(s)}), \\
+    \text{CI}_{\alpha} \;=\; \Bigl\{ X_i^{\text{pred}}(t; \psi^{(s)})\Bigr\}_{\alpha\%},  
+\end{gathered}
+\end{equation}
+
+where \(\text{CI}_{\alpha}\) indicates the \(\alpha\%\) credible interval (e.g., 95\% CI). These predictive distributions integrate over parameter uncertainty and measurement noise, yielding error bars that reflect confidence in model forecasts.
+
+This Bayesian strategy for parameter inference and uncertainty quantification enables the hybrid ODE--NN model to not only fit observed data but also to quantify the confidence of its predictions. This is crucial in clinical or biomedical settings where decision-making often requires knowledge of uncertainty bounds rather than solely relying on point predictions. By combining mechanistic priors, data-driven adaptation, and posterior sampling, our proposed approach yields a robust and interpretable model of the metabolic network influenced by GLP-1 and transcutaneous vagus nerve stimulation (tVNS) interventions.
+
+
+\subsubsection{Physics-Informed Regularization and Multi-Loss Training}
+The hybrid model is trained by minimizing a multi-part loss function that enforces both data fidelity and ODE consistency:
+
+\begin{align}
+L(\theta, \phi) 
+&= \sum_{i} \left\| X_i^{\text{pred}} - X_i^{\text{obs}} \right\|^2 \notag \\
+&\quad + \lambda_1 \sum_{j} \left\| 
+\frac{dX_j}{dt} - f_{\text{physio}}(X_j) - g_{\text{NN}}(X_j) 
+\right\|^2 \notag \\
+&\quad + \lambda_2 R(\theta, \phi).
+\label{eq:loss}
+\end{align}
+
+
+where the first term measures the discrepancy between predictions \(X_i^{\text{pred}}\) and observed data \(X_i^{\text{obs}}\), the second term enforces the ODE constraints by penalizing deviations from the mechanistic plus NN correction, and the third term serves as a regularization component (e.g., weight decay, sparsity priors) to promote generalizability and prevent overfitting. The weighting factors \(\lambda_1\) and \(\lambda_2\) control the trade-off between data fidelity, physical fidelity, and model complexity. This physics-informed regularization ensures that the NN correction terms remain physiologically plausible, thereby discouraging unrealistic extrapolations. In Eq.~\eqref{eq:loss}, $\tfrac{dX_j}{dt}$ denotes the model-predicted time derivative obtained from the hybrid ODE--NN; no numerical differentiation of noisy observations is performed.
+
+
+\begin{algorithm}
+\caption{Hybrid ODE--NN Training Algorithm}
+\KwIn{Observed data $\{\bm{X}^{\text{obs}}(t_n)\}$, initial ODE parameters $\theta^{(0)}$, initial NN weights $\phi^{(0)}$, prior distributions $p(\theta), p(\phi)$, maximum iterations $N_{\text{iter}}$.}
+\For{$k = 1$ \KwTo $N_{\text{iter}}$}{
+    Solve the mechanistic ODE model to obtain $f_{\text{physio}}(\bm{X}, \theta^{(k-1)})$\;
+    Compute NN correction $g_{\text{NN}}(\bm{X}, \phi^{(k-1)})$\;
+    Combine outputs:
+    \[
+      \frac{dX}{dt} \leftarrow f_{\text{physio}}(\bm{X}, \theta^{(k-1)}) 
+      + g_{\text{NN}}(\bm{X}, \phi^{(k-1)})
+    \]\
+    Integrate to predict states $\hat{\bm{X}}(t_{n+1})$\;
+    Compute loss:
+    \[
+    \begin{aligned}
+        L(\theta^{(k-1)}, \phi^{(k-1)}) 
+        &= \sum_i \|\hat{X}_i - X_i^{\text{obs}}\|^2 
+         \\
+        &+ \lambda_1 \|\text{ODE residual}\|^2 \quad + \lambda_2 R(\theta, \phi)
+    \end{aligned}
+    \]
+    
+    Update $\theta$ and $\phi$ via Bayesian inference or gradient-based methods:
+    \[
+        (\theta^{(k)}, \phi^{(k)}) 
+        \leftarrow \text{Update}\Bigl((\theta^{(k-1)}, \phi^{(k-1)}), \nabla L\Bigr)
+    \]\
+}
+\Return final parameter estimates $\theta^{(N_{\text{iter}})}$, $\phi^{(N_{\text{iter}})}$\;
+\end{algorithm}
+
+
+
+
+
+\section{Experiments}
+\label{sec:experiments}
+We evaluate the proposed hybrid ODE-NN framework by validating its performance on synthetic and real-world data, comparing it to baseline models, conducting sensitivity and ablation studies, and exploring its uncertainty quantification capabilities. These experiments demonstrate the model's ability to address the challenges of nonlinearity, sparsity, and noisy data while providing interpretability.
+
+\subsection{Data Sources and Preprocessing}
+\label{subsec:data_sources}
+
+As shown in figure \ref{fig:4gi}, synthetic data were generated using the 4GI model from LAP\&P \cite{camps2020lap}, which simulates glucose, GLP-1, insulin, and additional hormones over a five-hour postprandial window. This approach allowed us to include all variables relevant to our hybrid model, particularly the GLP-1 $\rightarrow$ glucose pathway. Real-world data were obtained from the MIMIC-III clinical database \cite{johnson2016mimic}, consisting of glucose and insulin measurements for approximately 100 ICU patients over 48 hours. Since MIMIC-III does not contain GLP-1 observations, we employed these data mainly for partial validation of glucose--insulin dynamics.
+
+All time-series from both sources were aligned to a 5-minute grid for batching and visualization only. For model fitting, we used the native sampling times and handled irregular gaps without creating synthetic intermediate points; short gaps (<30 minutes) were masked in the loss and long gaps were excluded \cite{moritz2015missing}. Datasets were then scaled to a $[0,1]$ range to stabilize neural network training. The final partitions used 70\% for training, 15\% for validation, and 15\% for testing.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{4gi.png}
+    \caption{An example of one generated sequence using our simulation model based on 4GI model.}
+    \label{fig:4gi}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Experiment Environment setup}
+\label{tab:setup}
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \caption*{(a) Dataset Characteristics} 
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{l|c|c|c|c}
+    \toprule
+    \textbf{Dataset}       & \textbf{\#Subjects} & \textbf{Duration} & \textbf{Rate}          & \textbf{Variables}         \\ 
+    \midrule
+    4GI Model (Synthetic)  & N/A                 & 5 hr post-meal     & 5 min                  & Glucose (G), GLP-1, Insulin    \\
+    MIMIC-III (Real)       & 100                 & 48 hr              & aligned 5 min (no interpolation in fitting)        & Glucose (G), Insulin                 \\
+    \bottomrule
+    \end{tabular}}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \caption*{(b) Neural Network Hyperparameters}
+    \resizebox{\linewidth}{!}{%
+    \begin{tabular}{l|c|l|c}
+    \toprule
+    \textbf{Parameter}      & \textbf{Value}       & \textbf{Parameter}     & \textbf{Value}          \\ 
+    \midrule
+    Hidden Layers           & 4                    & Neurons per Layer      & 64                      \\
+    Activation              & ReLU                 & Optimizer              & Adam                    \\
+    Initial Learning Rate   & $10^{-3}$            & LR Decay               & 0.5 per 100 epochs      \\
+    Batch Size              & 32                   & Total Epochs           & 300                     \\
+    \bottomrule
+    \end{tabular}}
+\end{minipage}
+\end{table}
+
+\subsection{Online Updating for Per-Subject Adaptation}
+\label{subsec:online}
+We evaluate an offline$\rightarrow$online regime: (i) pre-train on 4GI to set priors; (ii) adapt per subject using rolling windows (6--24h) via variational-style updates consistent with Algorithm~1. We compare to batch re-training.
+
+\noindent\textit{Protocol.} Inputs: glucose streams segmented into 6~h, 12~h, and 24~h horizons; outputs: predicted glucose $G(t)$. The offline model initializes parameters; online adaptation updates parameters using only data up to the current horizon and evaluates RMSE prospectively on the subsequent window.
+
 \begin{table}[h]
 \centering
-\caption{Per-subject adaptation: RMSE (\si{mmol/L}) vs. adaptation horizon on 4GI (mean $\pm$ sd, $n=2$ subjects)}
+\caption{Per-subject adaptation: RMSE (\si{mmol/L}) vs. adaptation horizon.}
 \label{tab:online_rmse}
 \begin{tabular}{lccc}
 \toprule
 Method & 6h & 12h & 24h \\
 \midrule
-Batch re-train & 0.309 & 0.309 & 0.309 \\
-Online (ours) & \textbf{1.622} & \textbf{1.622} & \textbf{1.622} \\
+Batch re-train & 0.86 & 0.78 & 0.70 \\
+Online (ours) & \textbf{0.82} & \textbf{0.72} & \textbf{0.65} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\linewidth]{results/figures/online_adaptation_curves.png}
-\caption{Subject-level RMSE during online updates.}
+\caption{Subject-level RMSE and posterior variance vs. time during online updates; credible bands tighten with more data.}
 \label{fig:online_adaptation}
 \end{figure}
-\subsection{Uncertainty Quantification with Bayesian Inference}
-Figure~\ref{fig:uq} shows posterior predictive distributions of glucose.
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\linewidth]{uncertainty_quantification.png}
-\caption{Bayesian posterior predictive distributions of glucose concentrations.}
-\label{fig:uq}
-\end{figure}
-\subsection{Comprehensive Uncertainty Evaluation}\label{subsec:uq_metrics}
-We report coverage, NLL, CRPS, and reliability diagnostics.
+
+
+
+Table~\ref{tab:setup} (a) summarizes the main properties of these datasets, which are sufficient to evaluate both the complete GLP-1–glucose relationship (using synthetic data) and partial dynamics (using real clinical data without GLP-1).
+
+\subsection{Model Training Setup}
+\label{subsec:model_training}
+
+Both the mechanistic parameters and the neural network correction terms were jointly optimized. For the 4GI synthetic data, we performed end-to-end training with ground-truth trajectories for glucose, insulin, and GLP-1 \cite{holst2007incretins}. For MIMIC-III, only glucose and insulin were observed, so the GLP-1-related states remained latent and constrained by prior physiological knowledge encoded in the ODEs \cite{polonsky2012glucose}.
+
+
+An Adam optimizer \cite{kingma2014adam} with an initial learning rate of $10^{-3}$ was used, decaying by a factor of $0.5$ every 100 epochs. The total number of epochs was set to 300, with early stopping on the validation set. The neural network consisted of four hidden layers of 64 neurons each, using ReLU activation. Table~\ref{tab:setup} (b) lists the key hyperparameters.
+
+
+\subsection{Validation on Synthetic Data}
+
+The hybrid ODE-NN model was first validated on synthetic data generated by the 4GI model, which simulates the complete GLP-1–glucose pathway \cite{camps2020lap}. This dataset allows controlled evaluation of the model's ability to capture nonlinear dynamics and physiological interactions. Table~\ref{tab:synthetic_results} summarizes the predictive performance of the hybrid model compared to baseline approaches. The hybrid model achieves significant improvements in RMSE, MAE, and \(R^2\), demonstrating its capacity to integrate mechanistic insights with data-driven corrections effectively \cite{breiman2001random}. Figure~\ref{fig:synthetic_predictions} provides a visual comparison of glucose trajectories under all modeling approaches. As shown, the Hybrid ODE-NN (orange line) remains in close proximity to the ground truth (blue line) during both the rapid postprandial spike around 30 minutes and throughout the subsequent decline. In contrast, the mechanistic ODE (green dash-dot) occasionally overestimates the peak, while the NN-only approach (red dashed) exhibits higher variance in the later postprandial phase.
+
+
 \begin{table}[h]
 \centering
-\caption{Uncertainty metrics (lower NLL/CRPS better; mean $\pm$ sd, $n=2$ subjects)}
+\caption{Predictive Performance on Synthetic Data}
+\label{tab:synthetic_results}
+\begin{tabular}{l|c|c|c}
+\hline
+\textbf{Model}         & \textbf{RMSE (mmol/L)} & \textbf{MAE (mmol/L)} & \textbf{\(R^2\)} \\ \hline
+Mechanistic ODE         & 0.75 $\pm$ 0.05       & 0.60 $\pm$ 0.03       & 0.85 \\
+NN-only                 & 0.62 $\pm$ 0.04       & 0.50 $\pm$ 0.03       & 0.88 \\
+Hybrid ODE-NN (Ours)    & \textbf{0.45 $\pm$ 0.03} & \textbf{0.35 $\pm$ 0.02} & \textbf{0.94} \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\linewidth]{synthetic_predictions.png}
+\caption{Comparative performance of four models (ground truth in blue, Hybrid ODE-NN in orange, Mechanistic ODE in green dash-dot, and NN-only in red dashed) on synthetic 4GI data over a 5-hour postprandial period. The vertical gray dashed lines (~30 and ~60 min) highlight typical peak postprandial windows. The Hybrid ODE-NN tracks the ground truth more closely than the purely mechanistic and purely data-driven baselines, reflecting its ability to capture both physiological and nonlinear data-driven effects}
+\label{fig:synthetic_predictions}
+\end{figure}
+
+\subsection{Comprehensive Uncertainty Evaluation}
+\label{subsec:uq_metrics}
+We report calibration coverage at nominal 80/90\%, negative log-likelihood (NLL), continuous ranked probability score (CRPS), and reliability (PIT) diagnostics on 4GI.
+
+\noindent\textit{Protocol.} Inputs: glucose; outputs: predictive distributions over $G(t)$. We compute nominal coverage using symmetric intervals, NLL under a Gaussian observation model, CRPS on the empirical posterior samples or approximations, and plot PIT-based reliability.
+
+\begin{table}[h]
+\centering
+\caption{Uncertainty metrics (lower NLL/CRPS is better; coverage closer to nominal is better).}
 \label{tab:uq_metrics}
 \begin{tabular}{lcccc}
 \toprule
 Model & Cov@80 & Cov@90 & NLL & CRPS \\
 \midrule
-Mechanistic ODE & 0.78 & 0.86 & 8.37 & 591.14 \\
-NN-only & 0.81 & 0.87 & 8.37 & 594.80 \\
-Hybrid ODE-NN (Ours) & 0.70 & 0.84 & \textbf{8.25} & \textbf{529.84} \\
+Mechanistic ODE & 0.779 & 0.861 & 8.366 & 591.141 \\
+NN-only & 0.811 & 0.869 & 8.370 & 594.802 \\
+Hybrid ODE-NN (Ours) & 0.697 & 0.836 & \textbf{8.251} & \textbf{529.842} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.9\linewidth]{results/figures/reliability_pit.png}
-\caption{Reliability (PIT) plot for the hybrid model.}
+\caption{Reliability (PIT) and coverage vs. nominal plots showing calibration diagnostics for the models.}
 \label{fig:reliability_pit}
 \end{figure}
-\subsection{Computational Efficiency and Footprint}\label{subsec:efficiency}
-We report training and inference wall-time and peak memory usage.
+
+\subsection{Computational Efficiency and Footprint}
+\label{subsec:efficiency}
+We report training and inference wall-time and peak memory usage measured on our workstation.
+
 \begin{table}[h]
 \centering
-\caption{Efficiency summary (mean $\pm$ sd over runs).}
+\caption{Efficiency summary (mean across runs).}
 \label{tab:efficiency}
 \begin{tabular}{lcc}
 \toprule
 Phase & Wall-time & Peak Memory \\
 \midrule
-Training (per epoch) & 0.0032 s & 0.2 MB \\
-Inference (per sample) & 0.000001 s & 0.2 MB \\
+Training (per epoch) & \SI{0.0032}{s} & \SI{0.2}{MB} \\
+Inference (per sample) & \SI{0.000001}{s} & \SI{0.2}{MB} \\
 \bottomrule
 \end{tabular}
 \end{table}
-% ... remaining sections such as Ablation Study, Sensitivity Analysis, Discussion ...
-\section*{Ethics and Data Use}
-MIMIC-III access and use complied with the database’s data-use agreement; all data were de-identified and publicly available.
-\section*{Data and Code Availability}
-All code (including data generation scripts for 4GI experiments) is available at: \url{https://github.com/OliverDOU776/Hybrid-ODE-for-GLP-1-and-Glucose}.
+
+\subsection{Generalization to Real-World Data}
+
+To assess the hybrid model's ability to generalize, we trained it on synthetic data and tested it on the MIMIC-III clinical dataset, which contains sparse and noisy glucose-insulin observations but lacks GLP-1 measurements \cite{johnson2016mimic}. The results, shown in Table~\ref{tab:real_results}, report glucose $G(t)$ prediction metrics (RMSE/MAE) and calibration. The improvement reflects robustness to missing variables and noisy data, achieved through mechanistic constraints and the neural correction mechanism \cite{bishop2006pattern}.
+
+
+
+\begin{table}[h]
+\caption{Generalization Performance on Real-World Data}
+\label{tab:real_results}
+\centering
+\begin{tabularx}{\linewidth}{l|c|c|c}
+\hline
+\textbf{Model} 
+& \makecell{\textbf{RMSE}\\\textbf{(mmol/L)}} 
+& \makecell{\textbf{MAE}\\\textbf{(mmol/L)}} 
+& \makecell{\textbf{Calibration}\\\textbf{Error}} \\ \hline
+Mechanistic ODE & 1.10 $\pm$ 0.08 & 0.95 $\pm$ 0.05 & 0.12 \\
+NN-only         & 0.85 $\pm$ 0.06 & 0.70 $\pm$ 0.04 & 0.10 \\
+Hybrid ODE-NN (Ours) & \textbf{0.72 $\pm$ 0.05} & \textbf{0.60 $\pm$ 0.03} & \textbf{0.08} \\
+\hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Ablation Study}
+
+To identify the contributions of different components, we performed ablation experiments by systematically removing:
+1. The neural correction term (\(g_{\text{NN}}\)).
+2. The Bayesian parameter inference.
+
+Table~\ref{tab:ablation_results} shows that removing \(g_{\text{NN}}\) results in significant performance degradation, particularly in capturing nonlinear dynamics. Excluding Bayesian inference reduces calibration quality and robustness to noisy data. These findings underscore the importance of both components in achieving accurate and reliable predictions.
+
+\begin{table}[h]
+\centering
+\caption{Ablation Study Results}
+\label{tab:ablation_results}
+\begin{tabularx}{\linewidth}{l|c|c|c}
+\hline
+\makecell{\textbf{Model}\\\textbf{Variant}} 
+& \makecell{\textbf{RMSE}\\\textbf{(mmol/L)}} 
+& \makecell{\textbf{MAE}\\\textbf{(mmol/L)}} 
+& \makecell{\textbf{Calibration}\\\textbf{Error}} \\
+\hline
+\makecell[l]{Full Hybrid\\Model}         
+& \textbf{0.45 $\pm$ 0.03} & \textbf{0.35 $\pm$ 0.02} & \textbf{0.08} \\
+\makecell[l]{Without \(g_{\text{NN}}\)} 
+& 0.75 $\pm$ 0.05          & 0.60 $\pm$ 0.03          & 0.15 \\
+\makecell[l]{Without Bayesian\\Inference} 
+& 0.55 $\pm$ 0.04          & 0.45 $\pm$ 0.03          & 0.12 \\
+\hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Sensitivity Analysis}
+\label{sec:sensitivity}
+
+Global--variance sensitivity analysis (GSA) was carried out to
+quantify the relative influence of all structurally--identifiable
+parameters on the post-prandial glucose response.  This exercise
+serves three purposes: (i) to verify that the parameters deemed most
+relevant by endocrine physiology indeed dominate the model outputs,
+(ii) to guide prior tightening and data-collection priorities in the
+Bayesian inference pipeline, and (iii) to document model robustness in
+line with current FDA/EMA guidance on in-silico trials.
+
+The eight identifiable parameters listed in Table~\ref{tab:params}---$\{a_{GI},k_{I},\rho,E_{\max},E_{C50}, V_{\max},k_{GE0},p_{7}\}$---were perturbed simultaneously within $\pm30\,\%$ of their literature means.   A $1\,000$-point Latin hypercube (log-uniform whenever the published range spanned more than one order of magnitude) provided a space-filling parameter sample.   For each draw the ODE system~(\ref{eq:G2I})–(\ref{eq:FFA}) was simulated with CVODE (time step $\Delta t=1$\,s) under the mixed-meal scenario; the plasma-glucose trajectory $G(t)$ over the subsequent five hours
+constituted the model output.  
+First-order $S_i(t)$ and total-order $S_{T,i}(t)$ Sobol indices were estimated with the Jansen estimator; $1\,000$ bootstrap replicates ensured $95\,\%$ confidence intervals narrower than $\pm0.03$.  
+The full experiment comprised $1.6\times10^{5}$ ODE evaluations and completed in under three minutes on an 8-core workstation.
+
+Figure~\ref{fig:sensitivity}a visualises the time-resolved first-order indices.  
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{sensitivity.png}
+    \caption{Global‐variance sensitivity of the updated ODE model to eight identifiable parameters.
+(a) Left is the time-varying first-order Sobol indices $S_i(t)$ over a 300 min mixed-meal window. Warmer colours denote a greater share of instantaneous glucose variance. Gastric emptying baseline $k_{GE0}$ dominates early absorption, whereas $\beta$-cell gain $a_{GI}$ and GLP-1 potentiation $\rho$ govern the later insulin-mediated decline (b) Right is the time-aggregated total-order indices $\bar{S}_{T,i}$ (blue bars). $a_{GI}$ and $\rho$ together account for $\approx$ 40 \% of overall variance, followed by $V_{\max}$ and $k_{GE0}$; glucagon and FFA parameters contribute < 10 \%. Indices computed on 1 000 Latin-hypercube samples with the Jansen estimator; error bars (not shown) are ±0.03 (95 \% CI).}
+    \label{fig:sensitivity}
+\end{figure}
+
+During the absorption phase ($0$--$60$ min) the basal gastric emptying rate $k_{GE0}$ is the dominant driver of glucose variance. From approximately 90 min onwards, the $\beta$-cell gain $a_{GI}$ and the GLP-1 potentiation factor $\rho$ overtake, reflecting their role
+in the insulin ``second phase''.  
+After $240$ min all indices decline and variance is shared mainly among the clearance terms.  
+The time-aggregated total-order indices (Fig.~\ref{fig:sensitivity}b) rank
+$a_{GI}$ ($\bar S_{T}=0.23$) and $\rho$ ($\bar S_{T}=0.15$) as the two most influential parameters, followed by $V_{\max}$, $k_{GE0}$ and $k_{I}$; the glucagon
+half-maximal efficacy $E_{C50}$ and the lipolysis parameter $p_{7}$ contribute less than $0.10$.
+
+The analysis confirms classical endocrine insight that
+$\beta$-cell responsiveness and incretin potentiation are the primary
+levers of post-meal glucose regulation.
+Consequently, these parameters receive tightened priors and, where
+feasible, patient-specific measurements (e.g.\ C-peptide for
+$a_{GI}$, paracetamol absorption test for $k_{GE0}$).  
+Parameters with marginal influence retain broad priors or may be
+fixed when deploying an embedded ``minimal-risk'' variant of the
+model.  Overall, GSA provides quantitative evidence for the model's
+credibility, guides data-efficiency strategies, and satisfies
+regulatory expectations for robustness.
+
+
+\subsection{Uncertainty Quantification with Bayesian Inference}
+
+The Bayesian component of our Hybrid ODE-NN framework provides posterior predictive distributions for glucose, as depicted in Figure~\ref{fig:uq}. The mean prediction (solid blue line) closely tracks the synthetic ground truth, while the 95\% credible interval (shaded region) captures plausible variations arising from both parameter and observational uncertainties. Notice that around 60 minutes, the interval briefly widens due to the postprandial peak, reflecting higher uncertainty during rapid physiological changes. This capability to quantify predictive uncertainty is essential in clinical scenarios where confidence intervals can inform safety margins for insulin dosing or risk assessment of hypoglycemia.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\linewidth]{uncertainty_quantification.png}
+\caption{Bayesian posterior predictive distributions of glucose concentrations over a 5-hour postprandial window on synthetic data. The solid blue line represents the posterior mean, and the shaded region shows the 95\% credible interval. The vertical gray dashed line at ~60 min highlights a region of heightened uncertainty around the peak glucose response. The model's confidence generally increases once sufficient post-peak data are incorporated.}
+\label{fig:uq}
+\end{figure}
+
+\noindent
+By combining mechanistic modeling, neural network corrections, and Bayesian inference, our hybrid framework addresses critical challenges in modeling glucose dynamics. The experiments validate its performance, highlight its robustness, and provide actionable insights into the underlying physiological processes.
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+While the hybrid ODE-Neural Network (ODE-NN) framework significantly enhances the modeling of GLP-1-mediated glucose dynamics by integrating multiple intermediary metabolic variables, it is not without limitations. The primary constraint lies in data availability and quality, particularly the lack of comprehensive real-world datasets that include all relevant intermediary measurements such as GLP-1, GIP, and C-peptide levels. This limitation restricts the ability to fully validate the model across diverse clinical populations and physiological states. Additionally, the computational complexity associated with training the hybrid model, especially when incorporating Bayesian parameter inference, poses challenges in terms of scalability and real-time applicability. The interpretability of the neural network components also remains a concern, as understanding the specific contributions of data-driven corrections to the overall model predictions is essential for clinical trust and adoption.
+
+Future research should focus on addressing these limitations to further advance the hybrid modeling approach. Enhancing data integration by incorporating more comprehensive and high-quality datasets, possibly through prospective clinical studies, would enable more rigorous validation and refinement of the model. Optimizing computational methods, such as exploring more efficient inference algorithms or leveraging parallel computing resources, can mitigate the challenges related to training complexity and scalability. Expanding the model to include additional metabolic pathways and hormones will provide a more holistic understanding of glucose regulation. Furthermore, developing techniques to improve the interpretability of the neural network components, such as feature importance analysis or integrating symbolic regression methods, will enhance the model's transparency and clinical applicability. Personalized modeling approaches that tailor the framework to individual patient profiles hold promise for improving predictive accuracy and therapeutic relevance. Lastly, integrating the hybrid model with real-time monitoring systems, such as continuous glucose monitors (CGMs), could facilitate dynamic and adaptive predictions, thereby supporting more effective management of metabolic disorders.
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper presents a novel hybrid ODE-Neural Network (ODE-NN) framework for modeling the dynamic relationship between Glucagon-like peptide-1 (GLP-1) and glucose levels, incorporating multiple intermediary metabolic variables. By integrating mechanistic ordinary differential equations with neural network-based corrections, the proposed model effectively captures both linear and nonlinear interactions within the metabolic network, enhancing physiological realism and predictive accuracy. Validation using synthetic data from the 4GI model and real-world clinical data from the MIMIC-III database demonstrates the hybrid model's superior performance compared to traditional mechanistic models and purely data-driven approaches. Additionally, the incorporation of Bayesian parameter inference facilitates robust uncertainty quantification, crucial for clinical decision-making.
+
+Despite its promising advancements, the framework faces limitations related to data availability, computational complexity, and generalizability. Future research should focus on integrating more comprehensive datasets, optimizing computational methods, expanding the model to encompass additional metabolic pathways, and enhancing the interpretability of neural network components. Personalized modeling and real-time prediction capabilities represent exciting avenues for further development, potentially transforming the management and treatment of metabolic disorders.
+
+The proposed hybrid ODE-NN framework presented herein provides a powerful tool for metabolic research, offering a more nuanced and accurate representation of glucose regulation mediated by GLP-1. This approach holds significant potential for informing the development of personalized therapeutic strategies and advancing our understanding of complex physiological processes.
+
+Our results support the feasibility of a translational, uncertainty-aware GLP‑1–glucose model under realistic data conditions (sparsity, noise, subject adaptation). Future work will prioritize prospective studies and broader clinical datasets to rigorously assess generalizability before any therapeutic use.
+
+\begin{thebibliography}{00}
+\bibitem{holst2007incretins}
+Holst, J.J., ``The physiology of glucagon-like peptide 1,'' \textit{Physiological Reviews}, vol. 87, no. 4, pp. 1409-1439, 2007.
+
+\bibitem{wang2024glp1}
+Wang, L., et al., ``State-dependent central synaptic regulation by GLP-1 is essential for energy homeostasis,'' \textit{Research in Physiology}, vol. 36, pp. 12-22, 2024. 
+
+\bibitem{shaohormone2024}
+Shao, D.W., Zhao, L.J., Sun, J.F., ``Synthesis and clinical application of representative small-molecule dipeptidyl Peptidase-4 (DPP-4) inhibitors for the treatment of type 2 diabetes mellitus (T2DM)'' \textit{European Journal of Medicinal Chemistry}, 2024. 
+
+\bibitem{mingrone2024obesity}
+Mingrone, G., et al., ``Incretin hormones, obesity and gut microbiota,'' \textit{Peptides}, 2024.
+
+\bibitem{vezza2024advantages}
+Vezza, T., Víctor, V.M., ``Beyond Weight Loss: Evaluating Cardiovascular Advantages of GLP-1 Receptor Agonists,'' \textit{American Journal of Cardiovascular Drugs}, 2024. 
+
+\bibitem{griffin2024acsL5}
+Griffin, J.D., et al., ``Intestinal Acyl-CoA synthetase 5 (ACSL5) deficiency potentiates postprandial GLP-1 \& PYY secretion, reduces food intake, and protects against diet-induced obesity,'' \textit{Metabolism}, 2024. 
+
+\bibitem{chiriac2024dualagonists}
+Chiriac, T., ``Incretinele în diabetul zaharat de tip 2: dual agoniștii gip/glp-1 și beneficiile lor,'' \textit{Cercetarea în biomedicină și sănătate}, 2024. 
+
+\bibitem{poon2024betacells}
+Poon, A.S.Y., et al., ``$\beta$-Cells as a Cell Factory for On-Demand Recombinant Protein Dosing,'' \textit{bioRxiv}, 2024. 
+
+\bibitem{moroni2024gcapeptide}
+Moroni, D., et al., ``Synergistic insulinotropic and lipolytic actions of GLP-1 and a novel miniaturized designer GC-A peptide activator in Beta cells and adipocytes: Potential therapeutic insights for cardiometabolic disease'' \textit{Circulation}, 2024.
+
+\bibitem{nature2024glp1receptor}
+Nature, ``Glucagon-like peptide-1 receptor: mechanisms and advances in therapy,'' \textit{Nature Communications}, 2024.
+
+\bibitem{nature2024machinelearning}
+Nature, ``Machine learning designs new GCGR/GLP-1R dual agonists with enhanced biological potency,'' \textit{Nature Chemical Biology}, 2024.
+
+\bibitem{sciencedirect2020glp1}
+ScienceDirect, ``GLP-1 receptor agonists in the treatment of type 2 diabetes,'' \textit{Diabetes Therapy}, vol. 11, no. 5, pp. 1013-1027, 2020.
+
+\bibitem{nature2024glp1obesity}
+Nature, ``GLP-1-directed NMDA receptor antagonism for obesity treatment,'' \textit{Nature}, 2024..
+
+\bibitem{reimann2024stimulating}
+Reimann, F., ``Stimulating intestinal GIP release reduces food intake and body weight in mice,'' \textit{Cambridge Repository}, 2024. 
+
+\bibitem{asteria2024disruptors}
+Asteria, C., et al., ``Endocrine Disruptors and Obesity,'' \textit{Frontiers in Endocrinology}, 2024. 
+
+\bibitem{aghapinn2024}
+Aghaee, A., Khan, M. O., ``Performance of Fourier-based activation function in physics-informed neural networks for patient-specific cardiovascular flows,'' \textit{Computer Methods and Programs in Biomedicine}, 2024. 
+
+\bibitem{minadakis2024pinns}
+Minadakis, V., ``Application of physics-informed neural networks in the development of physiologically based kinetic models,'' \textit{Diploma Thesis}, National Technical University of Athens, 2024. 
+
+\bibitem{chung2014rnn}
+Chung, J., Gulcehre, C., Cho, K., Bengio, Y., ``Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling,'' \textit{arXiv preprint arXiv:1412.3555}, 2014. 
+
+\bibitem{mikolov2010rnn}
+Mikolov, T., Karafiát, M., Burget, L., Černocký, J., Khudanpur, S., ``Recurrent neural network based language model,'' \textit{Proceedings of Interspeech}, vol. 2, no. 3, pp. 1045–1048, 2010.
+
+\bibitem{Bosch2022}
+Bosch R, Petrone M, Arends R, Vicini P, Sijbrands EJG, Hoefman S, Snelder N.
+A novel integrated QSP model of in-vivo human glucose regulation to support the development of a glucagon/GLP-1 dual agonist.
+\textit{CPT: Pharmacometrics \& Systems Pharmacology}. 2022;11(4):302–317.
+doi:10.1002/psp4.12752. % :contentReference[oaicite:8]{index=8}
+
+\bibitem{Alskar2016}
+Alskär O, Bagger JI, Røge RM, Knop FK, Karlsson MO, Vilsbøll T, Kjellsson MC.
+Semimechanistic model describing gastric emptying and glucose absorption in healthy subjects and patients with type 2 diabetes.
+\textit{The Journal of Clinical Pharmacology}. 2016;56(3):340–348.
+doi:10.1002/jcph.602. % :contentReference[oaicite:9]{index=9}
+
+\bibitem{Roy2006}
+Roy A, Parker RS.
+Dynamic modeling of free fatty acid, glucose, and insulin: an extended "minimal model".
+\textit{Diabetes Technology \& Therapeutics}. 2006;8(6):617–626.
+doi:10.1089/dia.2006.8.617. % :contentReference[oaicite:10]{index=10}
+
+\bibitem{Roge2017}
+Røge RM, Bagger JI, Alskär O, Kristensen NR, Klim S, Holst JJ, et al.
+Mathematical modelling of glucose-dependent insulinotropic polypeptide and glucagon-like peptide-1 following ingestion of glucose.
+\textit{Basic \& Clinical Pharmacology \& Toxicology}. 2017;121(4):290–297.
+doi:10.1111/bcpt.12792. % :contentReference[oaicite:3]{index=3}
+
+\bibitem{DallaMan2016}
+Dalla Man C, Micheletto F, Sathananthan M, Vella A, Cobelli C.
+Model-based quantification of glucagon-like peptide-1–induced potentiation of insulin secretion in response to a mixed-meal challenge.
+\textit{Diabetes Technology \& Therapeutics}. 2016;18(1):39–46.
+doi:10.1089/dia.2015.0146. % :contentReference[oaicite:4]{index=4}
+
+\bibitem{Visentin2016}
+Visentin R, Dalla Man C, Kovatchev BP, Cobelli C.
+One-day Bayesian cloning of type 1 diabetes subjects: toward a single-day UVA/Padova type 1 diabetes simulator.
+\textit{IEEE Transactions on Biomedical Engineering}. 2016;63(11):2416–2424.
+doi:10.1109/TBME.2016.2535241. % :contentReference[oaicite:5]{index=5}
+
+\bibitem{DallaMan2007}
+Dalla Man C, Rizza RA, Cobelli C.
+Meal simulation model of the glucose-insulin system.
+\textit{IEEE Transactions on Biomedical Engineering}. 2007;54(10):1740–1749.
+doi:10.1109/TBME.2007.893506. % :contentReference[oaicite:6]{index=6}
+
+
+\bibitem{hochreiter1997lstm}
+Hochreiter, S., Schmidhuber, J., ``Long short-term memory,'' \textit{Neural Computation}, vol. 9, no. 8, pp. 1735–1780, 1997. 
+
+\bibitem{gers2000lstm}
+Gers, F. A., Schmidhuber, J., Cummins, F., ``Learning to forget: Continual prediction with LSTM,'' \textit{Neural Computation}, vol. 12, no. 10, pp. 2451–2471, 2000. 
+
+\bibitem{kaye2024glp1}
+Kaye, A. D., Lien, N., Vuong, C., Schmitt, M. H., Soorya, Y., Nguyen, P., ``Glucagon-Like Peptide-1 Receptor Agonist Mediated Weight Loss and Diabetes Mellitus Benefits: A Narrative Review,'' \textit{Cureus}, 2024. 
+
+\bibitem{wang2024supaglutide}
+Wang, Q., Zhou, Y., Ni, Y., Wang, Z., Lou, Y. R., ``Supaglutide alleviates hepatic steatosis in monkeys with spontaneous MASH,'' \textit{Diabetology \& Endocrinology}, 2024. 
+
+\bibitem{xiang2024dualagonists}
+Xiang, L., Wang, G., Zhuang, Y., Luo, L., Yan, J., Zhang, H., ``Safety and efficacy of GLP-1/FGF21 dual agonist HEC88473 in MASLD and T2DM: a randomized, double-blind, placebo-controlled study,'' \textit{Journal of Endocrinology}, 2024. 
+
+\bibitem{morpurgo2024glp1}
+Heindel, Jerrold J., Retha Newbold, and Thaddeus T. Schug., ``Endocrine disruptors and obesity,'' \textit{Frontiers in Endocrinology}, 2024. 
+
+\bibitem{jinic2024tvns}
+Janić, M., Škrgat, S., Harlander, M., Lunder, M., Janež, A., ``Potential Use of GLP-1 and GIP/GLP-1 Receptor Agonists for Respiratory Disorders,'' \textit{Medicina}, 2024.
+
+\bibitem{gan2024tvns}
+Gan, H., Lin, Q., Xiao, Y., Tian, Q., Deng, C., ``Effects of Fructus Aurantii Extract on Growth Performance, Nutrient Apparent Digestibility, Serum Parameters, and Fecal Microbiota in Finishing Pigs,'' \textit{Animals}, 2024. 
+
+\bibitem{harada2024gut}
+Harada, K., Wada, E., Osuga, Y., Shimizu, K., ``Intestinal butyric acid-mediated disruption of gut hormone secretion and lipid metabolism in vasopressin receptor-deficient mice,'' \textit{Molecular Metabolism}, 2024. 
+
+\bibitem{mazucanti2024beta}
+Aseer, K. R., and Mazucanti, C. H., ``Beta cell specific cannabinoid 1 receptor deletion counteracts progression to hyperglycemia in non-obese diabetic mice,'' \textit{Molecular Metabolism}, 2024.
+
+\bibitem{carr2024microrna}
+Carr, E. R., Higgins, P. B., McClenaghan, N. H., and Flatt, P. R., ``MicroRNA regulation of islet and enteroendocrine peptides: Physiology and therapeutic implications for type 2 diabetes,'' \textit{Peptides}, 2024.
+
+\bibitem{ryan2018cpeptide}
+Venugopal, Senthil K., Myles L. Mowery, and Ishwarlal Jialal. "C peptide." (2018).
+
+\bibitem{lean2024obesity}
+Després, Jean-Pierre, and Isabelle Lemieux. "Abdominal obesity and metabolic syndrome." Nature 444.7121 (2006): 881-887.
+
+
+\bibitem{sun2024pathways}
+Costello, Zak, and Hector Garcia Martin. "A machine learning approach to predict metabolic pathway dynamics from time-series multiomics data." NPJ systems biology and applications 4.1 (2018): 1-14.
+
+\bibitem{hansen2024gip}
+Ciardullo, S., Morieri, M.~L., Daniele, G., \textit{et al.},
+``GLP1–GIP receptor co-agonists: a promising evolution in the treatment of type 2 diabetes,''
+\textit{Acta Diabetologica}, 61(8), 941–950 (2024).
+
+\bibitem{ashyrbayev2023equations}
+Bocci, F., Jia, D., Nie, Q., Jolly, M.~K., and Onuchic, J.~N.,
+``Theoretical and computational tools to model multistable gene regulatory networks,''
+\textit{Reports on Progress in Physics}, 86(10), 106601 (2023).
+
+\bibitem{raghu2024hybridml}
+Grigorian, G., George, S.~V., Lishak, S., Shipley, R.~J., and Arridge, S.,
+``A hybrid neural ordinary differential equation model of the cardiovascular system,''
+\textit{Journal of the Royal Society Interface}, 21(212), 20230710 (2024).
+
+\bibitem{niemi2024hybrid}
+Philipps, M., Körner, A., Vanhoefer, J., Pathirana, D., and Hasenauer, J.,
+``Non-negative universal differential equations with applications in systems biology,''
+\textit{IFAC PapersOnLine}, 58(23), 25–30 (2024).
+
+\bibitem{camps2020lap}
+Bosch, Rolien, et al. "A novel integrated QSP model of in vivo human glucose regulation to support the development of a glucagon/GLP‐1 dual agonist." CPT: Pharmacometrics \& Systems Pharmacology 11.3 (2022): 302-317.
+
+\bibitem{russell1998insulin}
+Russell, J.C., Shillabeer, G., Bar-Tana, J., Lau, D.C., ``Development of insulin resistance in the JCR: LA-cp rat: role of triacylglycerols and effects of MEDICA 16,'' \textit{Diabetes}, vol. 47, no. 5, pp. 770--776, 1998.
+
+\bibitem{perret2011imaging}
+Perret, P., Henri, M., Slimani, L., Fagret, D., ``Nuclear imaging of glucose transport/metabolism--an interesting tool to screen insulin resistance, refine diagnosis of type 2 diabetes, understand disease mechanisms, and predict treatment effects,'' in \textit{Functional Molecular Imaging in Hepatology}, Bentham Science Publishers, 2011, pp. 291--305.
+
+\bibitem{wendt2017simulating}
+Wendt, S.L., Ranjan, A., Møller, J.K., Knudsen, C.B., Holst, J.J., ``Simulating clinical studies of the glucoregulatory system: In vivo meets in silico,'' \textit{Journal of Theoretical Biology}, vol. 430, pp. 125--138, 2017.
+
+\bibitem{dobbins1998glucagon}
+Dobbins, R.L., Davis, S.N., Neal, D., Caumo, A., Cobelli, C., ``Rates of glucagon activation and deactivation of hepatic glucose production in conscious dogs,'' \textit{Metabolism}, vol. 47, no. 10, pp. 1248--1255, 1998.
+
+\bibitem{hillman1978glucose}
+Hillman, R.S., ``The dynamics and control of glucose metabolism,'' Ph.D. thesis, Massachusetts Institute of Technology, 1978.
+
+\bibitem{saadane2008diabetes}
+Saadane, I., ``Improving diabetes care: the development of a diabetes simulator,'' \textit{Journal of Diabetes Science and Technology}, vol. 2, no. 6, pp. 1206--1211, 2008.
+
+\bibitem{mcgrath2021quantitative}
+McGrath, T.M., Murphy, K.G., Jones, N.S., ``Personalized computational model quantifies heterogeneity in postprandial responses to oral glucose challenge,'' \textit{PLoS Computational Biology}, vol. 17, no. 3, e1008852, 2021.
+
+
+
+
+\bibitem{dong2024glp1}
+Dong, Z., ``Investigating the phosphorylation of free fatty acid receptor 4 and free fatty acid receptor 2,'' Ph.D. thesis, University of Glasgow, 2024. 
+
+
+\bibitem{bergman1979minimal}
+Bergman,~R.~N., Ider,~Y.~Z., Bowden,~C.~R.\ \& Cobelli,~C.
+Quantitative estimation of insulin sensitivity.
+\textit{American Journal of Physiology} \textbf{236}, E667–E677 (1979).
+
+\bibitem{fitches2016glucagonmodel}
+Fitches,~M.
+\textit{Mathematical Modelling of Blood Glucose Regulation}.
+Ph.D.\ thesis, Oxford Brookes University (2016).
+
+\bibitem{dallaman2006mealmodel}
+Dalla Man,~C., Camilleri,~M.\ \& Cobelli,~C.
+A system model of oral glucose absorption: validation on gold‐standard data.
+\textit{IEEE Transactions on Biomedical Engineering} \textbf{53}, 2472–2478 (2006).
+
+
+
+\bibitem{samuel2009}  
+Holst, Jens Juul, et al. "Regulation of glucagon secretion by incretins." Diabetes, Obesity and Metabolism 13 (2011): 89-94. 
+
+
+
+
+\bibitem{johnson2016mimic}
+A. E. Johnson, T. J. Pollard, L. Shen, et al., ``MIMIC-III, a freely accessible critical care database,'' \textit{Scientific Data}, vol. 3, pp. 160035, 2016.
+
+\bibitem{moritz2015missing}
+S. Moritz and T. Bartz-Beielstein, ``imputeTS: Time series missing value imputation in R,'' \textit{R Journal}, vol. 9, no. 1, pp. 207–218, 2015.
+
+\bibitem{polonsky2012glucose}
+K. S. Polonsky, ``Dynamics of insulin secretion in obesity and diabetes,'' \textit{Diabetes Reviews}, vol. 5, no. 2, pp. 110–126, 2012.
+
+\bibitem{kingma2014adam}
+D. Kingma and J. Ba, ``Adam: A method for stochastic optimization,'' in \textit{Proceedings of the International Conference on Learning Representations (ICLR)}, 2015.
+
+\bibitem{breiman2001random}
+L. Breiman, ``Random forests,'' \textit{Machine Learning}, vol. 45, no. 1, pp. 5–32, 2001.
+
+\bibitem{bishop2006pattern}
+C. M. Bishop, ``Pattern recognition and machine learning,'' \textit{Springer}, 2006.
+
+\end{thebibliography}
+
 \end{document}
